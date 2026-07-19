@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../logic/lizenz_service.dart';
 import '../main.dart';
+import 'zeitexa_logo.dart';
 
 /// Erster Schritt beim Start: wird gezeigt, solange keine gültige Lizenz
 /// vorliegt. Fragt den Lizenznamen und den Freischaltcode gemeinsam ab; alternativ
@@ -99,7 +100,7 @@ class _LizenzScreenState extends ConsumerState<LizenzScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.lock_outline, size: 48),
+                const Center(child: ZeitexaLogo()),
                 const SizedBox(height: 16),
                 Text('Zeitexa freischalten',
                     style: Theme.of(context).textTheme.headlineMedium,

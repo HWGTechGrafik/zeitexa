@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../main.dart';
+import 'zeitexa_logo.dart';
 
 /// Ersteinrichtung beim allerersten Start. Gefragt wird bewusst NUR der
 /// Anzeigename: Zeitexa startet mit Vorgabewerten (Sollstunden,
@@ -57,6 +58,8 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const Center(child: ZeitexaLogo()),
+                  const SizedBox(height: 16),
                   Text('Willkommen bei Zeitexa',
                       style: Theme.of(context).textTheme.headlineMedium,
                       textAlign: TextAlign.center),
