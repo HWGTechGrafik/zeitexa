@@ -145,10 +145,18 @@ def main():
         speichere(rund,
                   f"android/app/src/main/res/{ordner}/ic_launcher.png", groesse)
 
-    ico = os.path.join(BASIS, "windows/runner/resources/app_icon.ico")
-    rund.save(ico, sizes=[(16, 16), (32, 32), (48, 48), (64, 64),
-                          (128, 128), (256, 256)])
-    print("   windows/runner/resources/app_icon.ico (16-256)")
+    # Windows-Symbole: die App selbst und das Entwickler-Werkzeug. Beide
+    # bekommen dasselbe Motiv, damit auf keinen Fall Verwechslungsgefahr mit
+    # der Firmenversion Zeitrax entsteht (die weiterhin das
+    # Flutter-Standardsymbol traegt).
+    for pfad in [
+        "windows/runner/resources/app_icon.ico",
+        "tools/lizenz_gui/windows/runner/resources/app_icon.ico",
+    ]:
+        rund.save(os.path.join(BASIS, pfad),
+                  sizes=[(16, 16), (32, 32), (48, 48), (64, 64),
+                         (128, 128), (256, 256)])
+        print("  ", pfad, "(16-256)")
     print("Fertig.")
 
 
