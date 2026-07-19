@@ -3,18 +3,11 @@ import 'package:drift/drift.dart';
 
 import '../data/database.dart';
 
-/// Ergebnis eines Login-Versuchs.
-sealed class LoginErgebnis {}
-
-class LoginOk extends LoginErgebnis {
-  final User user;
-  LoginOk(this.user);
-}
-
-class LoginFehler extends LoginErgebnis {
-  final String meldung;
-  LoginFehler(this.meldung);
-}
+/// Benutzername des einen Zeitexa-Profils. Zeitexa kennt keine Anmeldung –
+/// der Name existiert nur, weil die Datenbank (gemeinsam mit der
+/// Firmenversion) eine Benutzerspalte hat. Sichtbar ist immer nur der frei
+/// wählbare Anzeigename.
+const String kEinzelBenutzername = 'ich';
 
 class AuthService {
   final ZeitexaDb db;
@@ -26,25 +19,25 @@ class AuthService {
   static bool pruefe(String passwort, String hash) =>
       BCrypt.checkpw(passwort, hash);
 
-  /// Ist die Ersteinrichtung schon erledigt (Adminpasswort gesetzt)?
-  Future<bool> istEingerichtet() async =>
-      await db.getSetting(SettingsKeys.adminPasswordHash) != null;
+  /// Ist die Ersteinrichtung schon erledigt (Profil vorhanden)?
+  Future<bool> istEingerichtet() async => await einzelUser() != null;
 
-  /// Ersteinrichtung: Adminpasswort und erstes Benutzerprofil (der Chef
-  /// selbst) anlegen. Der Firmenname wurde bereits bei der
-  /// Lizenz-Freischaltung gespeichert. Das Entwickler-/Branding-Passwort
-  /// legt NICHT der Kunde fest - es kommt als Hash aus der importierten
-  /// Lizenzdatei (siehe LizenzService).
-  Future<User> ersteinrichtung({
-    required String adminPasswort,
-    required String username,
-    required String anzeigename,
-    required String benutzerPasswort,
-  }) async {
-    await setzeAdminPasswort(adminPasswort);
+  /// Das eine Profil dieser Installation, oder null vor der Einrichtung.
+  Future<User?> einzelUser() async {
+    final alle = await db.allUsers();
+    return alle.isEmpty ? null : alle.first;
+  }
+
+  /// Ersteinrichtung: legt das einzige Profil an. Gefragt wird nur der
+  /// Anzeigename – alle Zeit- und Urlaubswerte starten mit Vorgaben und
+  /// werden vom Nutzer selbst in der Verwaltung gesetzt (Hinweiskarte in
+  /// der Monatsansicht, siehe [SettingsKeys.einstellungenGeprueft]).
+  Future<User> ersteinrichtung({required String anzeigename}) async {
     final id = await db.into(db.users).insert(UsersCompanion.insert(
-          username: username.trim(),
-          passwordHash: hash(benutzerPasswort),
+          username: kEinzelBenutzername,
+          // Ohne Anmeldung wird der Hash nie geprüft; er bleibt gesetzt,
+          // damit die gemeinsame Datenbankspalte gültig befüllt ist.
+          passwordHash: hash('-'),
           displayName: anzeigename.trim(),
           isAdmin: const Value(true),
         ));
@@ -52,27 +45,25 @@ class AuthService {
     return (db.select(db.users)..where((t) => t.id.equals(id))).getSingle();
   }
 
-  /// Setzt das Adminpasswort (Chef-Bereich). Wird von [ersteinrichtung]
-  /// genutzt und vom Setup-Screen, wenn die Benutzer bereits aus einer
-  /// Benutzerdatei übernommen wurden und nur noch das Adminpasswort fehlt.
-  Future<void> setzeAdminPasswort(String adminPasswort) =>
-      db.setSetting(SettingsKeys.adminPasswordHash, hash(adminPasswort));
+  // ---------- App-Sperre (optional, standardmäßig aus) ----------
 
-  /// Übernimmt einen bereits fertigen bcrypt-Hash als Adminpasswort – für
-  /// den Import einer Benutzerdatei, die das Adminpasswort mitbringt. Das
-  /// Klartext-Passwort ist dabei nie bekannt.
-  Future<void> setzeAdminPasswortHash(String bcryptHash) =>
-      db.setSetting(SettingsKeys.adminPasswordHash, bcryptHash);
+  /// Ist die App durch ein Passwort geschützt?
+  Future<bool> appSperreAktiv() async =>
+      await db.getSetting(SettingsKeys.appSperreHash) != null;
 
-  Future<LoginErgebnis> login(String username, String passwort) async {
-    final user = await db.userByName(username.trim());
-    if (user == null || !pruefe(passwort, user.passwordHash)) {
-      return LoginFehler('Benutzername oder Passwort falsch.');
-    }
-    return LoginOk(user);
+  Future<void> setzeAppSperre(String passwort) =>
+      db.setSetting(SettingsKeys.appSperreHash, hash(passwort));
+
+  Future<void> entferneAppSperre() =>
+      db.loescheSetting(SettingsKeys.appSperreHash);
+
+  Future<bool> pruefeAppSperre(String passwort) async {
+    final gespeichert = await db.getSetting(SettingsKeys.appSperreHash);
+    return gespeichert != null && pruefe(passwort, gespeichert);
   }
 
-  /// Legt einen Benutzer an (durch den Admin oder Selbst-Registrierung).
+  /// Legt einen Benutzer an. In Zeitexa nur für Tests und den internen
+  /// Testmodus relevant – die App legt genau ein Profil an.
   Future<User> benutzerAnlegen({
     required String username,
     required String anzeigename,
@@ -155,11 +146,6 @@ class AuthService {
           UsersCompanion(
               passwordHash: Value(hash(neuesPasswort)),
               mustChangePassword: const Value(false)));
-
-  Future<bool> pruefeAdminPasswort(String passwort) async {
-    final gespeichert = await db.getSetting(SettingsKeys.adminPasswordHash);
-    return gespeichert != null && pruefe(passwort, gespeichert);
-  }
 
   Future<bool> pruefeBrandingPasswort(String passwort) async {
     final gespeichert = await db.getSetting(SettingsKeys.brandingPasswordHash);

@@ -8,7 +8,7 @@ import '../logic/lizenz_service.dart';
 import '../main.dart';
 
 /// Erster Schritt beim Start: wird gezeigt, solange keine gültige Lizenz
-/// vorliegt. Fragt Firmenname und Freischaltcode gemeinsam ab; alternativ
+/// vorliegt. Fragt den Lizenznamen und den Freischaltcode gemeinsam ab; alternativ
 /// kann eine signierte Lizenzdatei importiert werden. Erst nach
 /// erfolgreicher Freischaltung geht es zur Ersteinrichtung bzw. zum Login.
 class LizenzScreen extends ConsumerStatefulWidget {
@@ -32,7 +32,7 @@ class _LizenzScreenState extends ConsumerState<LizenzScreen> {
     super.dispose();
   }
 
-  /// Firmenname vorbefüllen, falls das Gerät schon eingerichtet war
+  /// Lizenzname vorbefüllen, falls das Gerät schon eingerichtet war
   /// (Branding weicht vom Default 'Zeitexa' ab), z.B. nach einem Update.
   void _firmaVorbefuellen(String? gespeichert) {
     if (_firmaVorbefuellt || gespeichert == null) return;
@@ -106,7 +106,7 @@ class _LizenzScreenState extends ConsumerState<LizenzScreen> {
                     textAlign: TextAlign.center),
                 const SizedBox(height: 8),
                 const Text(
-                  'Bitte den Firmennamen genau so eingeben, wie ihn der '
+                  'Bitte den Namen genau so eingeben, wie ihn der '
                   'Entwickler für den Freischaltcode vorgegeben hat, und '
                   'dann den Code eintippen oder die Lizenzdatei importieren.',
                   textAlign: TextAlign.center,
@@ -115,7 +115,7 @@ class _LizenzScreenState extends ConsumerState<LizenzScreen> {
                 TextField(
                   controller: _firma,
                   decoration: const InputDecoration(
-                    labelText: 'Firmenname',
+                    labelText: 'Name des Lizenznehmers',
                     border: OutlineInputBorder(),
                   ),
                 ),

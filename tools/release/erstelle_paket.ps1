@@ -1,4 +1,4 @@
-# Erstellt das komplette Auslieferungspaket fuer Firmen im Ordner
+# Erstellt das komplette Auslieferungspaket fuer Kunden im Ordner
 # "Lieferung an Kunden" (im Projektstamm):
 #
 #   Lieferung an Kunden\
@@ -132,14 +132,15 @@ Zeitexa - Stundenerfassung
    (Rechtsklick auf die ZIP-Datei -> "Alle extrahieren").
 2. Im entpackten Ordner "Zeitexa starten" doppelklicken.
 
-Beim allerersten Start fragt Zeitexa zuerst nach Firmenname und
-Freischaltcode (bekommen Sie vom Entwickler), danach folgt die
-einmalige Einrichtung (Passwoerter, erstes Benutzerprofil).
+Beim allerersten Start fragt Zeitexa nach Ihrem Namen und dem
+Freischaltcode bzw. der Lizenzdatei (bekommen Sie vom Entwickler).
+Danach ist nur noch Ihr Anzeigename einzutragen - Arbeitszeiten und
+Urlaubswerte stellen Sie anschliessend selbst in der Verwaltung ein.
 
 Wichtig: Nicht direkt aus dem ZIP-Fenster heraus starten.
 Der Ordner "App" enthaelt die Programmdateien - dort nichts loeschen.
 
-Weitere Infos (Datensicherung, Anmeldung per Fingerabdruck usw.):
+Weitere Infos (Datensicherung, App-Sperre usw.):
 siehe ANLEITUNG.docx im Lieferpaket.
 '@
 

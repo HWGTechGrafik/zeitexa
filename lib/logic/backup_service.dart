@@ -15,6 +15,27 @@ bool istSqliteDatei(Uint8List bytes) {
   return bytes[15] == 0;
 }
 
+/// Steckt die Zeitexa-Produktkennung in der Datei? SQLite legt Textwerte
+/// unverschluesselt ab, der Marker ist also direkt in den Bytes zu finden.
+/// Damit fliegt eine Sicherung der Firmenversion Zeitrax auf, bevor sie
+/// eingespielt wird - sonst saesse hier eine Datenbank mit fremden
+/// Mitarbeitern in einer App ohne Benutzerauswahl.
+bool istZeitexaSicherung(Uint8List bytes) {
+  final marker = kProduktKennung.codeUnits;
+  final grenze = bytes.length - marker.length;
+  for (var start = 0; start <= grenze; start++) {
+    var passt = true;
+    for (var i = 0; i < marker.length; i++) {
+      if (bytes[start + i] != marker[i]) {
+        passt = false;
+        break;
+      }
+    }
+    if (passt) return true;
+  }
+  return false;
+}
+
 /// Komplettsicherung der Datenbank (Benutzer, Passwörter, Einträge,
 /// Branding, Lizenz) als eine Datei — zum Übertragen auf einen anderen
 /// PC oder als Datensicherung. Auf Web nicht verfügbar.
@@ -64,6 +85,11 @@ class BackupService {
     if (!istSqliteDatei(bytes)) {
       throw const FormatException(
           'Das ist keine gültige Zeitexa-Sicherungsdatei.');
+    }
+    if (!istZeitexaSicherung(bytes)) {
+      throw const FormatException(
+          'Diese Datei stammt nicht aus Zeitexa (z.B. aus der '
+          'Firmenversion Zeitrax) und kann hier nicht eingespielt werden.');
     }
     await db.close();
     await plattform.ersetzeDatenbank(bytes);

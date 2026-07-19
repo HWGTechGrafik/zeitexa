@@ -213,9 +213,28 @@ class ImportedEntries extends Table {
 }
 
 /// Schlüssel für AppSettings.
+/// Marker, der jede Zeitexa-Datenbank kennzeichnet. Steht als Klartext in
+/// der SQLite-Datei und macht Sicherungen fremder Produkte erkennbar -
+/// eine Zeitrax-Firmensicherung (mit mehreren Mitarbeitern) darf hier
+/// niemals eingespielt werden.
+const String kProduktKennung = 'ZEITEXA-SICHERUNG-V1';
+
 abstract class SettingsKeys {
-  static const adminPasswordHash = 'adminPasswordHash';
   static const brandingPasswordHash = 'brandingPasswordHash';
+
+  /// Traegt [kProduktKennung]; siehe dort.
+  static const produktKennung = 'produktKennung';
+
+  /// Optionale App-Sperre: bcrypt-Hash des selbst gewählten Passworts.
+  /// Fehlt der Schlüssel, ist die Sperre aus (Standard) und die App startet
+  /// direkt in die Monatsansicht. Siehe lib/logic/auth.dart.
+  static const appSperreHash = 'appSperreHash';
+
+  /// '1', sobald der Nutzer seine Arbeitszeit- und Urlaubswerte einmal
+  /// bestätigt hat. Bis dahin steht in der Monatsansicht die Hinweiskarte
+  /// „Bitte prüfe deine Arbeitszeiten", weil der Erststart mit Vorgaben
+  /// arbeitet (siehe lib/ui/setup_screen.dart).
+  static const einstellungenGeprueft = 'einstellungenGeprueft';
   static const zielEmail = 'zielEmail';
   static const smtpHost = 'smtpHost';
   static const smtpPort = 'smtpPort';
@@ -289,6 +308,11 @@ class ZeitexaDb extends _$ZeitexaDb {
             mode: InsertMode.insertOrIgnore,
           );
         },
+        beforeOpen: (details) async {
+          // Kennung in jede geoeffnete Datenbank schreiben (auch in bereits
+          // bestehende), damit Sicherungen zuverlaessig erkennbar sind.
+          await setSetting(SettingsKeys.produktKennung, kProduktKennung);
+        },
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.addColumn(users, users.mitarbeiterEmail);
@@ -350,6 +374,9 @@ class ZeitexaDb extends _$ZeitexaDb {
 
   Future<void> setBoolSetting(String key, bool value) =>
       setSetting(key, value ? '1' : '0');
+
+  Future<void> loescheSetting(String key) =>
+      (delete(appSettings)..where((t) => t.key.equals(key))).go();
 
   /// Öffnet der Heute-Knopf den Tageseintrag? Die eigene Wahl des
   /// Mitarbeiters (falls je gesetzt) geht vor, sonst gilt die Vorgabe des

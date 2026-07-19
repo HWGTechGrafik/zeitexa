@@ -3,15 +3,13 @@ import 'package:local_auth/local_auth.dart';
 
 import '../data/database.dart';
 
-/// Anmeldung per Fingerabdruck/Gesicht (Windows Hello, Android-Biometrie,
-/// auf iOS Face ID/Touch ID). Es wird KEIN Passwort gespeichert: pro
-/// Benutzer gibt es nur ein Opt-in-Flag; nach erfolgreicher
-/// Geraete-Authentifizierung wird der Benutzer direkt angemeldet.
+/// Entsperren per Fingerabdruck/Gesicht (Windows Hello, Android-Biometrie,
+/// auf iOS Face ID/Touch ID). Es wird KEIN Passwort gespeichert: es gibt nur
+/// ein Opt-in-Flag; nach erfolgreicher Geraete-Authentifizierung gilt die
+/// App-Sperre als geoeffnet.
 ///
-/// Wichtig: Geraete-Biometrie unterscheidet keine Personen - jeder am
-/// Geraet hinterlegte Fingerabdruck kann eine aktivierte Anmeldung nutzen.
-/// Deshalb doppelt abgesichert: Admin-Schalter (Chef-Bereich) plus
-/// bewusstes Opt-in des Benutzers. Auf Web nicht verfuegbar.
+/// Nur nutzbar, wenn die optionale App-Sperre eingeschaltet ist - ohne
+/// Sperre gibt es nichts zu entsperren. Auf Web nicht verfuegbar.
 class BiometrieService {
   final ZeitexaDb db;
 
@@ -55,15 +53,7 @@ class BiometrieService {
   /// Zeigt den System-Dialog (Fingerabdruck/Gesicht/PIN) mit [grund] an.
   Future<bool> authentifizieren(String grund) => _authentifizierer(grund);
 
-  // ---------- Admin-Schalter (Chef-Bereich) ----------
-
-  Future<bool> istErlaubt() =>
-      db.getBoolSetting(SettingsKeys.biometrieErlaubt, fallback: true);
-
-  Future<void> setErlaubt(bool erlaubt) =>
-      db.setBoolSetting(SettingsKeys.biometrieErlaubt, erlaubt);
-
-  // ---------- Opt-in pro Benutzer ----------
+  // ---------- Opt-in ----------
 
   Future<bool> istAktiviertFuer(int userId) =>
       db.getBoolSetting(SettingsKeys.biometrie(userId));
@@ -74,15 +64,8 @@ class BiometrieService {
   Future<void> deaktivierenFuer(int userId) =>
       db.setBoolSetting(SettingsKeys.biometrie(userId), false);
 
-  /// Benutzer, die sich auf diesem Geraet biometrisch anmelden koennen
-  /// (fuer die Buttons am Login-Screen). Leer, wenn der Admin-Schalter
-  /// aus ist oder das Geraet keine Biometrie unterstuetzt.
-  Future<List<User>> benutzerMitBiometrie() async {
-    if (!await istErlaubt() || !await geraetUnterstuetzt()) return [];
-    final ergebnis = <User>[];
-    for (final user in await db.allUsers()) {
-      if (await istAktiviertFuer(user.id)) ergebnis.add(user);
-    }
-    return ergebnis;
-  }
+  /// Darf zum Entsperren ein Fingerabdruck angeboten werden? Setzt voraus,
+  /// dass das Geraet es kann und der Nutzer es eingeschaltet hat.
+  Future<bool> entsperrenMoeglich(int userId) async =>
+      await geraetUnterstuetzt() && await istAktiviertFuer(userId);
 }

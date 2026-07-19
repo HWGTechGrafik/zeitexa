@@ -14,8 +14,10 @@
 #endif
 
 [Setup]
-; AppId nie aendern - daran erkennt Windows bei Updates die vorhandene Installation.
-AppId={{7F3A9C41-2B8E-4D6A-9F05-C1E8B4A7D293}}
+; AppId nie aendern - daran erkennt Windows bei Updates die vorhandene
+; Installation. EIGENE GUID, verschieden von Zeitrax: sonst wuerde das
+; Zeitexa-Setup die installierte Firmenversion als Update ueberschreiben.
+AppId={{937F5A02-2E5E-4CEB-A3F0-2EDF09EBA3DA}}
 AppName=Zeitexa
 AppVersion={#MyAppVersion}
 AppPublisher=Florian Moser

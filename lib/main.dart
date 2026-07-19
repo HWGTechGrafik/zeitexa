@@ -6,13 +6,12 @@ import 'data/database.dart';
 import 'export/export_service.dart';
 import 'logic/auth.dart';
 import 'logic/backup_service.dart';
-import 'logic/benutzer_transfer.dart';
 import 'logic/biometrie_service.dart';
 import 'logic/lizenz_service.dart';
 import 'ui/lizenz_screen.dart';
-import 'ui/login_screen.dart';
 import 'ui/monats_screen.dart';
 import 'ui/setup_screen.dart';
+import 'ui/sperr_screen.dart';
 
 final dbProvider = Provider<ZeitexaDb>((ref) => ZeitexaDb());
 final authProvider =
@@ -23,33 +22,46 @@ final lizenzProvider =
     Provider<LizenzService>((ref) => LizenzService(ref.watch(dbProvider)));
 final backupProvider =
     Provider<BackupService>((ref) => BackupService(ref.watch(dbProvider)));
-final benutzerTransferProvider = Provider<BenutzerTransfer>(
-    (ref) => BenutzerTransfer(ref.watch(dbProvider)));
 final biometrieProvider = Provider<BiometrieService>(
     (ref) => BiometrieService(ref.watch(dbProvider)));
 
-/// Der aktuell angemeldete Benutzer (null = Login-Screen).
-class AngemeldeterUser extends Notifier<User?> {
-  @override
-  User? build() => null;
+/// Das eine Profil dieser Installation. Zeitexa kennt keine Anmeldung –
+/// nach `ref.invalidate` (z.B. nach Namensänderung in der Verwaltung) wird
+/// es neu geladen.
+final einzelUserProvider =
+    FutureProvider<User?>((ref) => ref.watch(authProvider).einzelUser());
 
-  void anmelden(User user) => state = user;
-  void abmelden() => state = null;
+/// Hat der Nutzer seine Zeit- und Urlaubswerte einmal bestätigt? Solange
+/// nicht, steht in der Monatsansicht die Hinweiskarte, weil der Erststart
+/// mit Vorgabewerten arbeitet.
+final einstellungenGeprueftProvider = FutureProvider<bool>((ref) =>
+    ref.watch(dbProvider).getBoolSetting(SettingsKeys.einstellungenGeprueft));
+
+/// Ist die optionale App-Sperre eingeschaltet? Standard: nein.
+final appSperreProvider =
+    FutureProvider<bool>((ref) => ref.watch(authProvider).appSperreAktiv());
+
+/// Wurde in dieser Sitzung bereits entsperrt?
+class Entsperrt extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void freigeben() => state = true;
 }
 
-final angemeldeterUserProvider =
-    NotifierProvider<AngemeldeterUser, User?>(AngemeldeterUser.new);
+final entsperrtProvider =
+    NotifierProvider<Entsperrt, bool>(Entsperrt.new);
 
 /// Branding als Stream, damit Farbe/Name sofort überall greifen.
 final brandingProvider =
     StreamProvider<Branding>((ref) => ref.watch(dbProvider).watchBranding());
 
 /// Interner Testmodus - NUR fuer Builds mit
-/// `--dart-define=ZEITEXA_TESTMODUS=true`: ueberspringt Freischaltung,
-/// Ersteinrichtung und Login (Test-Benutzer "tester", alle Passwoerter
-/// "test") und zeigt ein rotes TESTVERSION-Band. Solche Builds duerfen
-/// NIEMALS ausgeliefert werden - tools/release/erstelle_paket.ps1
-/// prueft die Binaries darauf und bricht sonst ab.
+/// `--dart-define=ZEITEXA_TESTMODUS=true`: ueberspringt Freischaltung und
+/// Ersteinrichtung (Test-Profil "Test-Benutzer") und zeigt ein rotes
+/// TESTVERSION-Band. Solche Builds duerfen NIEMALS ausgeliefert werden -
+/// tools/release/erstelle_paket.ps1 prueft die Binaries darauf und bricht
+/// sonst ab.
 const bool kTestModus = bool.fromEnvironment('ZEITEXA_TESTMODUS');
 
 /// Reihenfolge, in der StartGate entscheidet, was angezeigt wird.
@@ -68,34 +80,18 @@ final gateStatusProvider = FutureProvider<GateStatus>((ref) async {
   return eingerichtet ? GateStatus.bereit : GateStatus.nichtEingerichtet;
 });
 
-/// Testmodus: legt beim ersten Start automatisch eine Test-Einrichtung an
-/// (Firma "TESTVERSION", Benutzer "tester", alle Passwoerter "test").
-/// Bei einer bereits eingerichteten Datenbank wird nur der Test-Benutzer
-/// sichergestellt.
+/// Testmodus: legt beim ersten Start automatisch ein Test-Profil an.
 Future<void> _testModusVorbereiten(Ref ref) async {
   final auth = ref.read(authProvider);
   final db = ref.read(dbProvider);
-  if (!await auth.istEingerichtet()) {
-    await (db.update(db.brandings)..where((t) => t.id.equals(1))).write(
-        const BrandingsCompanion(firmenname: Value('TESTVERSION')));
-    await auth.ersteinrichtung(
-      adminPasswort: 'test',
-      username: 'tester',
-      anzeigename: 'Test-Benutzer',
-      benutzerPasswort: 'test',
-    );
-    // Im normalen Betrieb kommt das Entwickler-Passwort aus der
-    // Lizenzdatei - fuer die interne Testversion wird es direkt gesetzt.
-    await db.setSetting(
-        SettingsKeys.brandingPasswordHash, AuthService.hash('test'));
-    return;
-  }
-  if (await db.userByName('tester') == null) {
-    await auth.benutzerAnlegen(
-        username: 'tester', anzeigename: 'Test-Benutzer', passwort: 'test');
-    await (db.update(db.users)..where((t) => t.username.equals('tester')))
-        .write(const UsersCompanion(isAdmin: Value(true)));
-  }
+  if (await auth.istEingerichtet()) return;
+  await (db.update(db.brandings)..where((t) => t.id.equals(1)))
+      .write(const BrandingsCompanion(firmenname: Value('TESTVERSION')));
+  await auth.ersteinrichtung(anzeigename: 'Test-Benutzer');
+  // Im normalen Betrieb kommt das Entwickler-Passwort aus der Lizenzdatei -
+  // fuer die interne Testversion wird es direkt gesetzt.
+  await db.setSetting(
+      SettingsKeys.brandingPasswordHash, AuthService.hash('test'));
 }
 
 void main() {
@@ -129,10 +125,9 @@ class ZeitexaApp extends ConsumerWidget {
   }
 }
 
-/// Entscheidet beim Start: Lizenz-Freischaltung (Firmenname + Code) →
-/// Ersteinrichtung → Login → Monatsansicht. Die Lizenzprüfung greift
-/// unabhängig vom Login-Status, damit die App auch für einen bereits
-/// angemeldeten Chef gesperrt bleibt.
+/// Entscheidet beim Start: Freischaltung (Name + Code/Datei) →
+/// Ersteinrichtung (nur Name) → ggf. App-Sperre → Monatsansicht. Die
+/// Lizenzprüfung greift immer zuerst.
 class StartGate extends ConsumerWidget {
   const StartGate({super.key});
 
@@ -140,53 +135,42 @@ class StartGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final gate = ref.watch(gateStatusProvider);
     return gate.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const _Warten(),
       error: (error, _) => Scaffold(
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text('Datenbank-Fehler: $error',
-                textAlign: TextAlign.center),
+            child:
+                Text('Datenbank-Fehler: $error', textAlign: TextAlign.center),
           ),
         ),
       ),
-      data: (status) {
-        switch (status) {
-          case GateStatus.nichtEingerichtet:
-            return const SetupScreen();
-          case GateStatus.keineLizenz:
-            return const LizenzScreen();
-          case GateStatus.bereit:
-            final user = ref.watch(angemeldeterUserProvider);
-            if (user != null) return MonatsScreen(user: user);
-            if (kTestModus) return const _TestModusAnmeldung();
-            return const LoginScreen();
-        }
+      data: (status) => switch (status) {
+        GateStatus.nichtEingerichtet => const SetupScreen(),
+        GateStatus.keineLizenz => const LizenzScreen(),
+        GateStatus.bereit => const _Bereit(),
       },
     );
   }
 }
 
-/// Testmodus: meldet den Test-Benutzer automatisch an (kein Login-Screen).
-class _TestModusAnmeldung extends ConsumerStatefulWidget {
-  const _TestModusAnmeldung();
+/// Freigeschaltet und eingerichtet: Profil laden, ggf. entsperren lassen.
+class _Bereit extends ConsumerWidget {
+  const _Bereit();
 
   @override
-  ConsumerState<_TestModusAnmeldung> createState() =>
-      _TestModusAnmeldungState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(einzelUserProvider).value;
+    if (user == null) return const _Warten();
+    final gesperrt = ref.watch(appSperreProvider).value ?? false;
+    final entsperrt = ref.watch(entsperrtProvider);
+    if (gesperrt && !entsperrt) return SperrScreen(user: user);
+    return MonatsScreen(user: user);
+  }
 }
 
-class _TestModusAnmeldungState extends ConsumerState<_TestModusAnmeldung> {
-  @override
-  void initState() {
-    super.initState();
-    ref.read(dbProvider).userByName('tester').then((user) {
-      if (mounted && user != null) {
-        ref.read(angemeldeterUserProvider.notifier).anmelden(user);
-      }
-    });
-  }
+class _Warten extends StatelessWidget {
+  const _Warten();
 
   @override
   Widget build(BuildContext context) =>

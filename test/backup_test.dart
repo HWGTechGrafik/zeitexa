@@ -52,4 +52,39 @@ void main() {
     expect(users, hasLength(1));
     expect(users.single.username, 'chef');
   });
+
+  test('nur Sicherungen mit Zeitexa-Kennung werden angenommen', () async {
+    final tempDir = await Directory.systemTemp.createTemp('zeitexa_test');
+    addTearDown(() => tempDir.delete(recursive: true));
+
+    final db = ZeitexaDb.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    // beforeOpen läuft erst beim ersten Zugriff – Kennung setzen wie im
+    // laufenden Betrieb.
+    await db.setSetting(SettingsKeys.produktKennung, kProduktKennung);
+
+    final zielPfad =
+        '${tempDir.path}${Platform.pathSeparator}sicherung.zeitexadb';
+    await db.customStatement('VACUUM INTO ?', [zielPfad]);
+    final eigene = await File(zielPfad).readAsBytes();
+    expect(istZeitexaSicherung(eigene), isTrue);
+
+    // Eine Datenbank ohne Kennung steht für die Firmenversion Zeitrax.
+    final fremd = ZeitexaDb.forTesting(NativeDatabase.memory());
+    addTearDown(fremd.close);
+    await fremd.into(fremd.users).insert(UsersCompanion.insert(
+          username: 'chef',
+          passwordHash: 'hash',
+          displayName: 'Der Chef',
+        ));
+    await fremd.loescheSetting(SettingsKeys.produktKennung);
+    final fremdPfad =
+        '${tempDir.path}${Platform.pathSeparator}fremd.zeitraxdb';
+    await fremd.customStatement('VACUUM INTO ?', [fremdPfad]);
+    final fremdBytes = await File(fremdPfad).readAsBytes();
+
+    expect(istSqliteDatei(fremdBytes), isTrue, reason: 'ist eine SQLite-Datei');
+    expect(istZeitexaSicherung(fremdBytes), isFalse,
+        reason: 'aber ohne Zeitexa-Kennung');
+  });
 }

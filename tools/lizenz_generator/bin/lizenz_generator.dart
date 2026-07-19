@@ -8,9 +8,9 @@
 //     danach EINMALIG in packages/lizenz_shared/lib/oeffentlicher_schluessel.dart
 //     eingetragen werden.
 //
-//   dart run bin/lizenz_generator.dart erzeugen --firma "Muster GmbH"
+//   dart run bin/lizenz_generator.dart erzeugen --name "Max Muster"
 //       [--entwickler-passwort "<geheim>"]
-//     Erzeugt fuer den angegebenen Firmennamen einen Freischaltcode und eine
+//     Erzeugt fuer den angegebenen Lizenznamen einen Freischaltcode und eine
 //     signierte Lizenzdatei (ausgabe/<firma>.zeitexalizenz.json). Mit
 //     --entwickler-passwort wird der bcrypt-Hash des Passworts mitsigniert
 //     in die DATEI eingebettet - die App uebernimmt ihn beim Import als
@@ -51,7 +51,7 @@ Zeitexa Lizenzgenerator
 
 Befehle:
   keygen                        Neues Schluesselpaar erzeugen (einmalig!)
-  erzeugen --firma "<Name>"     Freischaltcode + Lizenzdatei fuer eine Firma erzeugen
+  erzeugen --name "<Name>"      Freischaltcode + Lizenzdatei fuer einen Nutzer erzeugen
     [--entwickler-passwort "<geheim>"]
                                 Bettet zusaetzlich den Hash des
                                 Entwickler-Passworts in die Lizenzdatei ein
@@ -96,7 +96,7 @@ Future<void> _erzeugen(List<String> args) async {
   String? firma;
   String? entwicklerPasswort;
   for (var i = 0; i < args.length; i++) {
-    if (args[i] == '--firma' && i + 1 < args.length) {
+    if ((args[i] == '--name' || args[i] == '--firma') && i + 1 < args.length) {
       firma = args[i + 1];
     }
     if (args[i] == '--entwickler-passwort' && i + 1 < args.length) {
@@ -104,7 +104,7 @@ Future<void> _erzeugen(List<String> args) async {
     }
   }
   if (firma == null || firma.trim().isEmpty) {
-    stderr.writeln('Bitte Firmennamen angeben: erzeugen --firma "Muster GmbH"');
+    stderr.writeln('Bitte Namen angeben: erzeugen --name "Max Muster"');
     exit(1);
   }
   if (entwicklerPasswort != null && entwicklerPasswort.length < 12) {
@@ -134,8 +134,8 @@ Future<void> _erzeugen(List<String> args) async {
   final zielDatei = File('${_ausgabeVerzeichnis.path}/${erzeugt.dateiName}');
   await zielDatei.writeAsString(erzeugt.dateiJson);
 
-  stdout.writeln('Firma: $firma');
-  stdout.writeln('Firmen-Id-Hash: ${erzeugt.lizenz.firmenIdHashHex}');
+  stdout.writeln('Lizenzname: $firma');
+  stdout.writeln('Namens-Id-Hash: ${erzeugt.lizenz.firmenIdHashHex}');
   stdout.writeln('');
   stdout.writeln('Freischaltcode (in der App eintippen):');
   stdout.writeln(erzeugt.freischaltcode);

@@ -1,6 +1,6 @@
 // Zeitexa Lizenz-Generator (GUI).
 //
-// Entwickler-Werkzeug fuer Florians Rechner: Firmenname eingeben ->
+// Entwickler-Werkzeug fuer Florians Rechner: Lizenznamen eingeben ->
 // Freischaltcode anzeigen (kopierbar) und optional die signierte
 // Lizenzdatei speichern. Nutzt dieselbe Erzeugungs-Logik wie das CLI
 // (erzeugeLizenz aus package:lizenz_shared).
@@ -143,7 +143,7 @@ class _LizenzSeiteState extends State<LizenzSeite> {
   Future<void> _erzeugen() async {
     final firma = _firmaController.text.trim();
     if (firma.isEmpty) {
-      setState(() => _fehler = 'Bitte zuerst einen Firmennamen eingeben.');
+      setState(() => _fehler = 'Bitte zuerst einen Namen eingeben.');
       return;
     }
     final passwort = _passwortController.text;
@@ -235,7 +235,7 @@ class _LizenzSeiteState extends State<LizenzSeite> {
               controller: _firmaController,
               autofocus: true,
               decoration: InputDecoration(
-                labelText: 'Firmenname',
+                labelText: 'Name des Lizenznehmers',
                 hintText: 'z. B. Muster GmbH',
                 border: const OutlineInputBorder(),
                 helperText: normalisiert.isEmpty

@@ -6,10 +6,9 @@ import '../export/monats_daten.dart';
 import '../logic/berechnung.dart';
 import '../logic/konten.dart';
 import '../main.dart';
-import 'admin_screen.dart';
 import 'eintrag_dialog.dart';
-import 'einstellungen_screen.dart';
 import 'ueber_dialog.dart';
+import 'verwaltung_screen.dart';
 
 class MonatsScreen extends ConsumerStatefulWidget {
   final User user;
@@ -292,20 +291,11 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
               switch (wert) {
                 case 'export':
                   await _exportMenu();
-                case 'einstellungen':
-                  await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) =>
-                              EinstellungenScreen(user: widget.user)));
-                  _lade();
-                case 'admin':
-                  await oeffneAdminBereich(context, ref);
+                case 'verwaltung':
+                  await oeffneVerwaltung(context, ref);
                   _lade();
                 case 'ueber':
                   await zeigeUeberDialog(context, ref);
-                case 'abmelden':
-                  ref.read(angemeldeterUserProvider.notifier).abmelden();
               }
             },
             itemBuilder: (context) => const [
@@ -314,28 +304,38 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
                   child: ListTile(
                       leading: Icon(Icons.outbox), title: Text('Monat exportieren/senden'))),
               PopupMenuItem(
-                  value: 'einstellungen',
+                  value: 'verwaltung',
                   child: ListTile(
-                      leading: Icon(Icons.settings), title: Text('Einstellungen'))),
-              PopupMenuItem(
-                  value: 'admin',
-                  child: ListTile(
-                      leading: Icon(Icons.admin_panel_settings),
-                      title: Text('Chef-Bereich'))),
+                      leading: Icon(Icons.tune),
+                      title: Text('Verwaltung'))),
               PopupMenuItem(
                   value: 'ueber',
                   child: ListTile(
                       leading: Icon(Icons.info_outline), title: Text('Über Zeitexa'))),
-              PopupMenuItem(
-                  value: 'abmelden',
-                  child: ListTile(
-                      leading: Icon(Icons.logout), title: Text('Abmelden'))),
             ],
           ),
         ],
       ),
       body: Column(
         children: [
+          if (!(ref.watch(einstellungenGeprueftProvider).value ?? true))
+            MaterialBanner(
+              backgroundColor:
+                  Theme.of(context).colorScheme.secondaryContainer,
+              content: const Text(
+                  'Zeitexa rechnet noch mit Vorgabewerten. Bitte prüfe '
+                  'einmal deine Arbeitszeiten, den Urlaubsanspruch und die '
+                  'Anfangsstände.'),
+              actions: [
+                FilledButton(
+                  onPressed: () async {
+                    await oeffneVerwaltung(context, ref);
+                    _lade();
+                  },
+                  child: const Text('Jetzt einstellen'),
+                ),
+              ],
+            ),
           if (_gesperrt)
             MaterialBanner(
               backgroundColor: Theme.of(context).colorScheme.errorContainer,

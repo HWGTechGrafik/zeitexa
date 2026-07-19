@@ -10,18 +10,18 @@ Future<int> _legeBenutzerAn(ZeitexaDb db, String username) =>
           displayName: username,
         ));
 
-BiometrieService _service(ZeitexaDb db, {bool authErfolg = true}) =>
+BiometrieService _service(ZeitexaDb db, {bool geraetKann = true}) =>
     BiometrieService(
       db,
-      authentifizierer: (_) async => authErfolg,
-      geraeteCheck: () async => true,
+      authentifizierer: (_) async => true,
+      geraeteCheck: () async => geraetKann,
     );
 
 void main() {
   test('aktivieren/deaktivieren setzt bzw. löscht das Opt-in-Flag', () async {
     final db = ZeitexaDb.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
-    final userId = await _legeBenutzerAn(db, 'max');
+    final userId = await _legeBenutzerAn(db, 'ich');
 
     final biometrie = _service(db);
     expect(await biometrie.istAktiviertFuer(userId), isFalse);
@@ -31,47 +31,25 @@ void main() {
     expect(await biometrie.istAktiviertFuer(userId), isFalse);
   });
 
-  test('benutzerMitBiometrie liefert nur Benutzer mit gesetztem Flag',
+  test('entsperrenMoeglich nur mit Opt-in', () async {
+    final db = ZeitexaDb.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final userId = await _legeBenutzerAn(db, 'ich');
+
+    final biometrie = _service(db);
+    expect(await biometrie.entsperrenMoeglich(userId), isFalse);
+    await biometrie.aktivierenFuer(userId);
+    expect(await biometrie.entsperrenMoeglich(userId), isTrue);
+  });
+
+  test('Gerät ohne Biometrie-Unterstützung → kein Entsperren per Finger',
       () async {
     final db = ZeitexaDb.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
-    final maxId = await _legeBenutzerAn(db, 'max');
-    await _legeBenutzerAn(db, 'moritz');
+    final userId = await _legeBenutzerAn(db, 'ich');
 
-    final biometrie = _service(db);
-    expect(await biometrie.benutzerMitBiometrie(), isEmpty);
-    await biometrie.aktivierenFuer(maxId);
-    final benutzer = await biometrie.benutzerMitBiometrie();
-    expect(benutzer.map((u) => u.username), ['max']);
-  });
-
-  test('Admin-Schalter aus → keine biometrischen Anmeldungen, '
-      'obwohl Flags gesetzt sind', () async {
-    final db = ZeitexaDb.forTesting(NativeDatabase.memory());
-    addTearDown(db.close);
-    final userId = await _legeBenutzerAn(db, 'max');
-
-    final biometrie = _service(db);
+    final biometrie = _service(db, geraetKann: false);
     await biometrie.aktivierenFuer(userId);
-    expect(await biometrie.istErlaubt(), isTrue); // Default: erlaubt
-    await biometrie.setErlaubt(false);
-    expect(await biometrie.benutzerMitBiometrie(), isEmpty);
-    await biometrie.setErlaubt(true);
-    expect(await biometrie.benutzerMitBiometrie(), hasLength(1));
-  });
-
-  test('Gerät ohne Biometrie-Unterstützung → keine Anmelde-Buttons',
-      () async {
-    final db = ZeitexaDb.forTesting(NativeDatabase.memory());
-    addTearDown(db.close);
-    final userId = await _legeBenutzerAn(db, 'max');
-
-    final biometrie = BiometrieService(
-      db,
-      authentifizierer: (_) async => true,
-      geraeteCheck: () async => false,
-    );
-    await biometrie.aktivierenFuer(userId);
-    expect(await biometrie.benutzerMitBiometrie(), isEmpty);
+    expect(await biometrie.entsperrenMoeglich(userId), isFalse);
   });
 }
