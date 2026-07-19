@@ -1,4 +1,4 @@
-// Entwickler-CLI zum Erzeugen von Zeitexa-Firmenlizenzen.
+// Entwickler-CLI zum Erzeugen von Zeitexa-Lizenzen.
 //
 // Befehle:
 //   dart run bin/lizenz_generator.dart keygen

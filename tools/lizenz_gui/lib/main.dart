@@ -5,7 +5,7 @@
 // Lizenzdatei speichern. Nutzt dieselbe Erzeugungs-Logik wie das CLI
 // (erzeugeLizenz aus package:lizenz_shared).
 //
-// Diese App wird NICHT an Firmen verteilt - sie braucht den privaten
+// Diese App wird NICHT an Kunden verteilt - sie braucht den privaten
 // Schluessel (tools/lizenz_generator/schluessel/privater_schluessel.json).
 
 import 'dart:convert';
@@ -55,7 +55,7 @@ class _LizenzSeiteState extends State<LizenzSeite> {
   /// Zuletzt erzeugte Lizenz (null = noch keine erzeugt).
   ErzeugteLizenz? _erzeugt;
 
-  /// Firmenname, zu dem [_erzeugt] gehoert (fuer Anzeige/Dateiname).
+  /// Lizenzname, zu dem [_erzeugt] gehoert (fuer Anzeige/Dateiname).
   String _erzeugtFuerFirma = '';
 
   String? _fehler;
@@ -236,7 +236,7 @@ class _LizenzSeiteState extends State<LizenzSeite> {
               autofocus: true,
               decoration: InputDecoration(
                 labelText: 'Name des Lizenznehmers',
-                hintText: 'z. B. Muster GmbH',
+                hintText: 'z. B. Max Muster',
                 border: const OutlineInputBorder(),
                 helperText: normalisiert.isEmpty
                     ? 'Der Name muss exakt so in der App eingerichtet sein '
