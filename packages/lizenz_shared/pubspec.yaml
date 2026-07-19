@@ -1,0 +1,16 @@
+name: lizenz_shared
+description: >
+  Gemeinsame, reine Dart-Logik fuer das Zeitexa-Lizenzsystem (Firmenbindung,
+  Freischaltcode-Format, Ed25519-Signaturpruefung). Wird sowohl von der
+  Zeitexa-App (nur Pruefung, oeffentlicher Schluessel) als auch vom separaten
+  Lizenzgenerator (Erzeugung, privater Schluessel) verwendet.
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  cryptography: ^2.7.0
+
+dev_dependencies:
+  test: ^1.24.0

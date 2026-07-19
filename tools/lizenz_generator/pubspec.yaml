@@ -1,0 +1,15 @@
+name: lizenz_generator
+description: >
+  Entwickler-Tool zum Erzeugen von Zeitexa-Firmenlizenzen (Freischaltcode +
+  signierte Datei). Enthaelt/erzeugt den PRIVATEN Schluessel - niemals mit
+  der App ausliefern oder committen.
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  bcrypt: ^1.2.0
+  cryptography: ^2.7.0
+  lizenz_shared:
+    path: ../../packages/lizenz_shared

@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "zeitexa-web-testmodus",
+      "runtimeExecutable": "C:\\dev\\flutter\\bin\\flutter.bat",
+      "runtimeArgs": ["run", "-d", "web-server", "--web-port=8125", "--web-hostname=localhost", "--dart-define=ZEITEXA_TESTMODUS=true"],
+      "port": 8125
+    },
+    {
+      "name": "zeitexa-web",
+      "runtimeExecutable": "C:\\dev\\flutter\\bin\\flutter.bat",
+      "runtimeArgs": ["run", "-d", "web-server", "--web-port=8123", "--web-hostname=localhost"],
+      "port": 8123
+    },
+    {
+      "name": "zeitexa-web-release",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8124", "--directory", "build/web"],
+      "port": 8124
+    }
+  ]
+}
