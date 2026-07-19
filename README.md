@@ -1,47 +1,56 @@
 # Zeitexa – Offline-Stundenerfassung
 
-Zeitexa ist eine Offline-App zur Stundenerfassung für Mitarbeiter. Alle Daten
-bleiben lokal am Gerät – kein Server, kein Konto im Internet.
+Zeitexa ist eine Offline-App zur Stundenerfassung für **eine einzelne
+Person** (Einzelunternehmer, Freiberufler, Angestellte, die ihre Zeiten selbst
+führen). Alle Daten bleiben lokal am Gerät – kein Server, kein Konto im
+Internet.
+
+Zeitexa ist die Einzelplatz-Schwester der Firmenversion **Zeitrax**: gleiche
+Rechenlogik, aber ohne Anmeldung, ohne Benutzerverwaltung und ohne
+Chef-Bereich. Beide Projekte werden getrennt entwickelt und haben eigene
+Lizenzschlüssel; ein Zeitrax-Code funktioniert hier nicht (und umgekehrt).
+Nur der JSON-Monatsexport ist zwischen beiden lesbar.
 
 ## Funktionen
 
-- **Firmenlizenz (Ed25519)**: Beim allerersten Start wird die App mit
-  Firmenname + Freischaltcode (oder Lizenzdatei) freigeschaltet – vor der
-  Einrichtung; ohne gültige Lizenz bleibt sie gesperrt
-- **Login bei jedem Start** (Benutzername + Passwort, bcrypt-gehasht),
-  mehrere Benutzer pro Gerät möglich; optional **Anmeldung per
-  Fingerabdruck/Gesicht** (Windows Hello / Android-Biometrie, Opt-in pro
-  Benutzer, Admin-Schalter; nicht im Browser)
+- **Lizenz (Ed25519)**: Beim allerersten Start wird die App mit dem Namen des
+  Lizenznehmers + Freischaltcode (oder Lizenzdatei) freigeschaltet; ohne
+  gültige Lizenz bleibt sie gesperrt
+- **Keine Anmeldung**: genau ein Profil, die App startet direkt in die
+  Monatsansicht. Optionale **App-Sperre** mit selbst vergebenem Passwort
+  (Standard: aus), auf Wunsch zusätzlich Entsperren per Fingerabdruck
+  (Windows Hello / Android-Biometrie; nicht im Browser)
+- **Erststart mit Vorgabewerten** plus Hinweiskarte in der Monatsansicht,
+  bis die eigenen Zeit- und Urlaubswerte einmal bestätigt wurden
 - **Monatsansicht 01–31** mit Wochentag-Kürzel, Ort (Schnellauswahl der
   zuletzt verwendeten Orte), Beginn, Pause, Ende, Ist/Soll, Überstunden (±), Notiz
-- **Tagesarten**: Arbeit, Urlaub (auch von–bis), Krankenstand, Feiertag
-  (österreichische Feiertage werden automatisch erkannt), Zeitausgleich
-- **Sollstunden pro Mitarbeiter**: ein genereller Tagessatz ODER Mo–Do und
-  Freitag getrennt; Sa/So zählen nicht als Soll
-- **Monatsexport** als JSON (für die Auswertung) + Excel + PDF (mit Branding
-  und Unterschriftszeile)
+- **Tagesarten**: Arbeit, Urlaub (auch von–bis und stundenweise geteilt),
+  Krankenstand, Feiertag (österreichische Feiertage werden automatisch
+  erkannt), Zeitausgleich, Sonderurlaub (mit Anlass), Zusatzurlaub
+- **Sollstunden**: ein genereller Tagessatz ODER Mo–Do und Freitag getrennt,
+  mit optionalen eigenen Freitags-Standardzeiten; Sa/So zählen nicht als Soll
+- **Monatsexport** als JSON + Excel + PDF (mit Logo und Unterschriftszeile)
 - **Mailversand**: automatisch per SMTP (wenn konfiguriert) oder über die
-  Mail-App des Geräts (Teilen); optionale **Sende-Sperre**: ab dem 1. muss
-  zuerst der Vormonat gesendet werden, bevor neu erfasst werden kann
-- **Chef-Bereich** (Adminpasswort): Mitarbeiterprofile anlegen, Sollstunden,
-  SMTP/Ziel-Mailadresse, Schalter, **Auswertung** (JSON-Dateien importieren →
-  Zusammenfassung pro Mitarbeiter/Monat, Gesamt-Export als Excel/PDF)
-- **Datensicherung** (Chef-Bereich, Windows/Android): komplette Datenbank
-  als eine Datei exportieren/wiederherstellen – auch zum Übertragen einer
-  fertig eingerichteten Installation auf einen weiteren PC (USB-Stick)
+  Mail-App des Geräts (Teilen)
+- **Verwaltung** (ohne Passwort, alles selbst einstellbar): Profil und
+  Sollstunden, Anfangsstände, Optionen, Logo/Akzentfarbe, Datensicherung,
+  **Auswertung** über einen frei wählbaren Zeitraum mit Excel-/PDF-Export
+- **Datensicherung** (Windows/Android): komplette Datenbank als
+  `.zeitexadb`-Datei sichern und wiederherstellen; Sicherungen fremder
+  Produkte werden anhand einer Produktkennung abgewiesen
 - **Versteckter Entwickler-Bereich** (7× auf die Versionsnummer im
-  „Über Zeitexa"-Dialog tippen, eigenes langes Passwort): Firmenname, Adresse,
-  Logo, Akzentfarbe – erscheint in der App und auf allen Exporten
+  „Über Zeitexa"-Dialog tippen, Passwort aus der Lizenzdatei): der
+  lizenzgebundene Name sowie Adresse und Betreffvorlage
 
 ## Erste Schritte in der App
 
-1. Beim allerersten Start: Firmenname + Freischaltcode eingeben (Codes
-   erzeugt `tools\lizenz_gui` bzw. `tools\lizenz_generator`).
-2. Danach einmalige Einrichtung: Adminpasswort, Entwickler-Passwort und das
-   eigene Profil festlegen.
-3. Chef-Bereich → Benutzer → Mitarbeiter anlegen (Start-Passwort wird beim
-   ersten Login geändert).
-4. Chef-Bereich → Mail & Optionen → Ziel-Mailadresse (und optional SMTP)
+1. Beim allerersten Start: Namen des Lizenznehmers + Freischaltcode eingeben
+   bzw. Lizenzdatei importieren (erzeugt `tools\lizenz_gui` bzw.
+   `tools\lizenz_generator`).
+2. Anzeigenamen eintragen – fertig.
+3. Verwaltung → Mein Profil: Sollstunden, Anfangsstände und Standardzeiten
+   setzen und speichern (danach verschwindet die Hinweiskarte).
+4. Verwaltung → Optionen: Empfänger der Monatsberichte (und optional SMTP)
    eintragen.
 
 ## Entwicklung / Builds
@@ -62,7 +71,7 @@ flutter build web --release  # Web/PWA: build\web\
 
 ## Verteilung
 
-- **Lieferpaket für Firmen**: `tools\release\erstelle_paket.ps1` baut den
+- **Lieferpaket**: `tools\release\erstelle_paket.ps1` baut den
   Ordner „Lieferung an Kunden" mit Windows-Setup (Inno), Windows-ZIP,
   Android-APK und ANLEITUNG.docx.
 - **Android**: `Zeitexa_v<Version>.apk` per Datei weitergeben („Unbekannte
@@ -73,8 +82,7 @@ flutter build web --release  # Web/PWA: build\web\
   **https://hwgtechgrafik.github.io/zeitexa/** – am iPhone in Safari öffnen →
   Teilen → **„Zum Home-Bildschirm"**. Die App läuft danach offline; Daten
   bleiben am Gerät. Einschränkung: kein automatischer SMTP-Versand im
-  Browser – der Export wird über das Teilen-Menü per Mail geschickt
-  (die Sende-Sperre erinnert daran).
+  Browser – der Export wird über das Teilen-Menü per Mail geschickt.
 
   Neue Version veröffentlichen:
   ```powershell
@@ -89,4 +97,8 @@ flutter build web --release  # Web/PWA: build\web\
 Flutter (eine Codebasis für Android/Windows/Web/iOS), drift/SQLite lokal
 (auf Web: WASM + IndexedDB), Riverpod, bcrypt, Pakete `excel`, `pdf`,
 `mailer`, `share_plus`, `file_picker`, `local_auth` (Windows Hello /
-Android-Biometrie); Firmenlizenz mit Ed25519 (`packages/lizenz_shared`).
+Android-Biometrie); Lizenz mit Ed25519 (`packages/lizenz_shared`, eigenes
+Schlüsselpaar).
+
+App-Symbole werden aus `toolselease\erzeuge_icons.py` erzeugt (ein Aufruf
+schreibt alle Größen für Windows, Android und die PWA).
