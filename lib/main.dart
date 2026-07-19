@@ -77,21 +77,23 @@ final gateStatusProvider = FutureProvider<GateStatus>((ref) async {
   final freigeschaltet = await ref.watch(lizenzProvider).istFreigeschaltet();
   if (!freigeschaltet) return GateStatus.keineLizenz;
   final eingerichtet = await ref.watch(authProvider).istEingerichtet();
-  return eingerichtet ? GateStatus.bereit : GateStatus.nichtEingerichtet;
+  if (!eingerichtet) return GateStatus.nichtEingerichtet;
+  // Anzeigename = Lizenzname. Nötig für Installationen aus der Zeit, als
+  // der Name bei der Ersteinrichtung noch frei wählbar war.
+  await ref.watch(lizenzProvider).synchronisiereAnzeigename();
+  return GateStatus.bereit;
 });
 
 /// Testmodus: legt beim ersten Start automatisch ein Test-Profil an.
+/// Der Anzeigename entspricht wie im Normalbetrieb dem Lizenz- bzw.
+/// hier dem Platzhalter-Namen.
 Future<void> _testModusVorbereiten(Ref ref) async {
   final auth = ref.read(authProvider);
   final db = ref.read(dbProvider);
   if (await auth.istEingerichtet()) return;
   await (db.update(db.brandings)..where((t) => t.id.equals(1)))
       .write(const BrandingsCompanion(firmenname: Value('TESTVERSION')));
-  await auth.ersteinrichtung(anzeigename: 'Test-Benutzer');
-  // Im normalen Betrieb kommt das Entwickler-Passwort aus der Lizenzdatei -
-  // fuer die interne Testversion wird es direkt gesetzt.
-  await db.setSetting(
-      SettingsKeys.brandingPasswordHash, AuthService.hash('test'));
+  await auth.ersteinrichtung(anzeigename: 'TESTVERSION');
 }
 
 void main() {
@@ -125,9 +127,9 @@ class ZeitexaApp extends ConsumerWidget {
   }
 }
 
-/// Entscheidet beim Start: Freischaltung (Name + Code/Datei) →
-/// Ersteinrichtung (nur Name) → ggf. App-Sperre → Monatsansicht. Die
-/// Lizenzprüfung greift immer zuerst.
+/// Entscheidet beim Start: Freischaltung (Code + Name bzw. Lizenzdatei) →
+/// Willkommensbildschirm (Profil wird mit dem Lizenznamen angelegt) →
+/// ggf. App-Sperre → Monatsansicht. Die Lizenzprüfung greift immer zuerst.
 class StartGate extends ConsumerWidget {
   const StartGate({super.key});
 

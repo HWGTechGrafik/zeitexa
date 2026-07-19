@@ -16,10 +16,12 @@ class LizenzFehler extends LizenzErgebnis {
   LizenzFehler(this.meldung);
 }
 
-/// Prueft und verwaltet die offline Firmenlizenz (Freischaltcode oder
-/// signierte Datei), gebunden an den in den Firmendaten hinterlegten
-/// Firmennamen. Verwendet nur den in der App eingebetteten OEFFENTLICHEN
-/// Schluessel - kann Lizenzen also nur pruefen, nicht erzeugen.
+/// Prueft und verwaltet die Offline-Lizenz (Freischaltcode oder signierte
+/// Datei). Die Lizenz ist an den Namen des Lizenznehmers gebunden; dieser
+/// Name ist zugleich der Anzeigename des Profils und laesst sich nur ueber
+/// eine neue Lizenz aendern. Verwendet nur den in der App eingebetteten
+/// OEFFENTLICHEN Schluessel - kann Lizenzen also nur pruefen, nicht
+/// erzeugen.
 class LizenzService {
   final ZeitexaDb db;
 
@@ -30,12 +32,12 @@ class LizenzService {
       : _oeffentlicherSchluessel =
             oeffentlicherSchluessel ?? oeffentlicherSchluesselBytes;
 
-  /// Ist aktuell eine gueltige, zum Firmennamen passende Lizenz gespeichert?
+  /// Ist aktuell eine gueltige, zum Lizenznamen passende Lizenz gespeichert?
   Future<bool> istFreigeschaltet() async {
     final lizenz = await _geladeneLizenz();
     if (lizenz == null) return false;
-    final firmenname = (await db.branding()).firmenname;
-    return pruefeLizenz(lizenz, firmenname, _oeffentlicherSchluessel);
+    final name = (await db.branding()).firmenname;
+    return pruefeLizenz(lizenz, name, _oeffentlicherSchluessel);
   }
 
   Future<SignierteLizenz?> _geladeneLizenz() async {
@@ -52,33 +54,37 @@ class LizenzService {
     }
   }
 
-  /// Loest einen vom Nutzer eingetippten Freischaltcode fuer den
-  /// angegebenen Firmennamen ein.
-  Future<LizenzErgebnis> codeEinloesen(String code, String firmenname) async {
-    if (firmenname.trim().isEmpty) {
-      return LizenzFehler('Bitte den Firmennamen eingeben.');
+  /// Loest einen vom Nutzer eingetippten Freischaltcode ein. Der Code
+  /// enthaelt den Namen nur als Pruefsumme, deshalb muss er hier exakt so
+  /// mitgegeben werden, wie ihn der Entwickler vorgegeben hat.
+  Future<LizenzErgebnis> codeEinloesen(String code, String name) async {
+    if (name.trim().isEmpty) {
+      return LizenzFehler('Bitte den Namen des Lizenznehmers eingeben.');
     }
     if (code.trim().isEmpty) {
       return LizenzFehler('Bitte einen Freischaltcode eingeben.');
     }
     try {
-      return await _pruefenUndSpeichern(parseFreischaltcode(code), firmenname);
+      return await _pruefenUndSpeichern(parseFreischaltcode(code), name);
     } on FormatException {
       return LizenzFehler(
           'Der Freischaltcode ist ungueltig (falsches Format).');
     }
   }
 
-  /// Importiert eine signierte Lizenzdatei (JSON-Inhalt als Text) fuer den
-  /// angegebenen Firmennamen.
-  Future<LizenzErgebnis> dateiEinloesen(
-      String jsonInhalt, String firmenname) async {
-    if (firmenname.trim().isEmpty) {
-      return LizenzFehler('Bitte den Firmennamen eingeben.');
-    }
+  /// Importiert eine signierte Lizenzdatei (JSON-Inhalt als Text). Der Name
+  /// des Lizenznehmers steht in der Datei selbst und wird gegen die
+  /// Signatur geprueft - eingetippt werden muss nichts.
+  Future<LizenzErgebnis> dateiEinloesen(String jsonInhalt) async {
     try {
-      return await _pruefenUndSpeichern(
-          parseLizenzdateiJson(jsonInhalt), firmenname);
+      final inhalt = parseLizenzdatei(jsonInhalt);
+      final name = inhalt.name;
+      if (name == null) {
+        return LizenzFehler(
+            'Die Lizenzdatei enthaelt keinen Namen - bitte eine aktuelle '
+            'Datei vom Entwickler anfordern.');
+      }
+      return await _pruefenUndSpeichern(inhalt.lizenz, name);
     } on FormatException {
       return LizenzFehler('Die Lizenzdatei ist ungueltig oder beschaedigt.');
     } catch (_) {
@@ -86,32 +92,35 @@ class LizenzService {
     }
   }
 
-  /// Prueft die Lizenz gegen [firmenname]; bei Erfolg wird der Firmenname
-  /// ins Branding uebernommen und die Lizenz gespeichert.
+  /// Prueft die Lizenz gegen [name]; bei Erfolg wird der Name als
+  /// Lizenzname UND als Anzeigename des Profils uebernommen und die Lizenz
+  /// gespeichert.
   Future<LizenzErgebnis> _pruefenUndSpeichern(
-      SignierteLizenz lizenz, String firmenname) async {
-    final gueltig =
-        await pruefeLizenz(lizenz, firmenname, _oeffentlicherSchluessel);
+      SignierteLizenz lizenz, String name) async {
+    final gueltig = await pruefeLizenz(lizenz, name, _oeffentlicherSchluessel);
     if (!gueltig) {
       return LizenzFehler(
-          'Dieser Freischaltcode/diese Datei passt nicht zum Firmennamen '
-          '"${firmenname.trim()}" oder ist ungueltig. Firmenname genau wie '
-          'vom Entwickler vorgegeben eingeben, oder einen passenden Code '
+          'Dieser Freischaltcode/diese Datei passt nicht zum Namen '
+          '"${name.trim()}" oder ist ungueltig. Den Namen genau wie vom '
+          'Entwickler vorgegeben eingeben, oder einen passenden Code '
           'anfordern.');
     }
     await (db.update(db.brandings)..where((t) => t.id.equals(1)))
-        .write(BrandingsCompanion(firmenname: Value(firmenname.trim())));
+        .write(BrandingsCompanion(firmenname: Value(name.trim())));
     await db.setSetting(SettingsKeys.lizenzPayload, base64.encode(lizenz.payload));
     await db.setSetting(
         SettingsKeys.lizenzSignatur, base64.encode(lizenz.signatur));
-    // Liefert die Lizenzdatei das Entwickler-Passwort mit (Version-2-Payload,
-    // mitsigniert), wird dessen Hash uebernommen - so legt der Entwickler
-    // das Passwort fest, nicht der Kunde bei der Ersteinrichtung.
-    final entwicklerHash = lizenz.entwicklerPasswortHash;
-    if (entwicklerHash != null && entwicklerHash.isNotEmpty) {
-      await db.setSetting(SettingsKeys.brandingPasswordHash, entwicklerHash);
-    }
+    await synchronisiereAnzeigename();
     return LizenzOk();
+  }
+
+  /// Gleicht den Anzeigenamen des (einzigen) Profils an den Lizenznamen an.
+  /// Vor der Ersteinrichtung gibt es noch kein Profil - dann passiert
+  /// nichts. Wird auch beim Start aufgerufen, damit Installationen aus der
+  /// Zeit, als der Name noch frei waehlbar war, einmalig nachziehen.
+  Future<void> synchronisiereAnzeigename() async {
+    final name = (await db.branding()).firmenname;
+    await db.update(db.users).write(UsersCompanion(displayName: Value(name)));
   }
 
   /// Erstellt den JSON-Inhalt der signierten Lizenzdatei zum Exportieren
@@ -122,7 +131,7 @@ class LizenzService {
     if (lizenz == null) {
       throw StateError('Keine Lizenz vorhanden.');
     }
-    final firmenname = (await db.branding()).firmenname;
-    return erstelleLizenzdateiJson(lizenz, firmenname);
+    final name = (await db.branding()).firmenname;
+    return erstelleLizenzdateiJson(lizenz, name);
   }
 }

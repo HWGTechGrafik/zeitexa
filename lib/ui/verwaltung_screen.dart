@@ -3,12 +3,19 @@ import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../data/database.dart';
+import '../export/export_service.dart';
 import '../logic/backup_service.dart';
+import '../logic/backup_stub.dart'
+    if (dart.library.io) '../logic/backup_io.dart' as plattform;
 import '../logic/berechnung.dart';
+import 'package:lizenz_shared/lizenz_shared.dart' show lizenzDateiName;
+
 import '../logic/lizenz_service.dart';
 import '../main.dart';
 import 'auswertung_view.dart';
@@ -116,9 +123,10 @@ class VerwaltungScreen extends ConsumerWidget {
 
 // ------------------------------------------------------------ Mein Profil
 
-/// Alle persönlichen Rechenwerte auf einer Seite: Name, Sollstunden,
-/// Anfangsstände, Urlaubskonten und Standardzeiten. In der Firmenversion
-/// setzt das der Chef pro Mitarbeiter – hier macht es der Nutzer selbst.
+/// Alle persönlichen Werte auf einer Seite: Name (aus der Lizenz, nur
+/// Anzeige), Briefkopf-Kontaktdaten, Sollstunden, Anfangsstände,
+/// Urlaubskonten und Standardzeiten. In der Firmenversion setzt das der
+/// Chef pro Mitarbeiter – hier macht es der Nutzer selbst.
 class _ProfilTab extends ConsumerStatefulWidget {
   const _ProfilTab();
 
@@ -129,6 +137,9 @@ class _ProfilTab extends ConsumerStatefulWidget {
 class _ProfilTabState extends ConsumerState<_ProfilTab> {
   final _anzeigename = TextEditingController();
   final _email = TextEditingController();
+  final _adresse = TextEditingController();
+  final _telefon = TextEditingController();
+  final _briefkopfEmail = TextEditingController();
   final _sollTag = TextEditingController();
   final _sollMoDo = TextEditingController();
   final _sollFr = TextEditingController();
@@ -163,6 +174,9 @@ class _ProfilTabState extends ConsumerState<_ProfilTab> {
     for (final c in [
       _anzeigename,
       _email,
+      _adresse,
+      _telefon,
+      _briefkopfEmail,
       _sollTag,
       _sollMoDo,
       _sollFr,
@@ -180,12 +194,17 @@ class _ProfilTabState extends ConsumerState<_ProfilTab> {
     final user = await ref.read(authProvider).einzelUser();
     if (user == null) return;
     final s = await ref.read(dbProvider).settingsFor(user.id);
+    final branding = await ref.read(dbProvider).branding();
     if (!mounted) return;
     setState(() {
       _user = user;
       _settings = s;
-      _anzeigename.text = user.displayName;
+      // Der Name kommt aus der Lizenz und ist hier nur Anzeige.
+      _anzeigename.text = branding.firmenname;
       _email.text = user.mitarbeiterEmail;
+      _adresse.text = branding.adresse;
+      _telefon.text = branding.telefon;
+      _briefkopfEmail.text = branding.email;
       _sollTag.text = formatStunden(s.sollStundenTag);
       _sollMoDo.text = formatStunden(s.sollStundenMoDo);
       _sollFr.text = formatStunden(s.sollStundenFr);
@@ -246,12 +265,14 @@ class _ProfilTabState extends ConsumerState<_ProfilTab> {
       standardEndeFrMin: Value(_minuten(_standardEndeFr)),
       standardPauseFrMin: Value(_standardPauseFrMin),
     ));
+    // Der Anzeigename bleibt unangetastet – er ist an die Lizenz gebunden.
     await (db.update(db.users)..where((t) => t.id.equals(user.id))).write(
-        UsersCompanion(
-            displayName: Value(_anzeigename.text.trim().isEmpty
-                ? user.displayName
-                : _anzeigename.text.trim()),
-            mitarbeiterEmail: Value(_email.text.trim())));
+        UsersCompanion(mitarbeiterEmail: Value(_email.text.trim())));
+    await (db.update(db.brandings)..where((t) => t.id.equals(1))).write(
+        BrandingsCompanion(
+            adresse: Value(_adresse.text.trim()),
+            telefon: Value(_telefon.text.trim()),
+            email: Value(_briefkopfEmail.text.trim())));
     // Ab jetzt gelten die Werte als geprüft: die Hinweiskarte in der
     // Monatsansicht verschwindet.
     await db.setBoolSetting(SettingsKeys.einstellungenGeprueft, true);
@@ -272,9 +293,12 @@ class _ProfilTabState extends ConsumerState<_ProfilTab> {
       children: [
         TextField(
           controller: _anzeigename,
+          readOnly: true,
+          enabled: false,
           decoration: const InputDecoration(
-              labelText: 'Dein Name',
-              helperText: 'Steht auf Auswertungen und Exporten'),
+              labelText: 'Name (aus der Lizenz)',
+              helperText: 'Steht auf allen Berichten. Änderbar nur über '
+                  'eine neue Lizenzdatei des Entwicklers.'),
         ),
         TextField(
           controller: _email,
@@ -282,6 +306,27 @@ class _ProfilTabState extends ConsumerState<_ProfilTab> {
           decoration: const InputDecoration(
               labelText: 'Deine E-Mail-Adresse',
               helperText: 'Für die eigene Kopie beim Mail-Export'),
+        ),
+        const Divider(height: 32),
+        Text('Briefkopf der Berichte',
+            style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 4),
+        const Text('Erscheint unter deinem Namen im Kopf der PDF-Berichte. '
+            'Leere Felder werden weggelassen.'),
+        TextField(
+          controller: _adresse,
+          decoration: const InputDecoration(labelText: 'Adresse'),
+        ),
+        TextField(
+          controller: _telefon,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(labelText: 'Telefon'),
+        ),
+        TextField(
+          controller: _briefkopfEmail,
+          keyboardType: TextInputType.emailAddress,
+          decoration:
+              const InputDecoration(labelText: 'E-Mail auf dem Bericht'),
         ),
         const Divider(height: 32),
         _SollFelder(
@@ -471,6 +516,7 @@ class _OptionenTab extends ConsumerStatefulWidget {
 
 class _OptionenTabState extends ConsumerState<_OptionenTab> {
   final _ziel = TextEditingController();
+  final _betreffVorlage = TextEditingController();
   final _host = TextEditingController();
   final _port = TextEditingController(text: '465');
   final _smtpUser = TextEditingController();
@@ -495,7 +541,14 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
 
   @override
   void dispose() {
-    for (final c in [_ziel, _host, _port, _smtpUser, _smtpPass]) {
+    for (final c in [
+      _ziel,
+      _betreffVorlage,
+      _host,
+      _port,
+      _smtpUser,
+      _smtpPass
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -506,6 +559,8 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
     final user = await ref.read(authProvider).einzelUser();
     _userId = user?.id;
     _ziel.text = await db.getSetting(SettingsKeys.zielEmail) ?? '';
+    _betreffVorlage.text = await db.getSetting(SettingsKeys.betreffVorlage) ??
+        kBetreffVorlageStandard;
     _host.text = await db.getSetting(SettingsKeys.smtpHost) ?? '';
     _port.text = await db.getSetting(SettingsKeys.smtpPort) ?? '465';
     _smtpUser.text = await db.getSetting(SettingsKeys.smtpUser) ?? '';
@@ -524,6 +579,11 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
   Future<void> _speichern() async {
     final db = ref.read(dbProvider);
     await db.setSetting(SettingsKeys.zielEmail, _ziel.text.trim());
+    await db.setSetting(
+        SettingsKeys.betreffVorlage,
+        _betreffVorlage.text.trim().isEmpty
+            ? kBetreffVorlageStandard
+            : _betreffVorlage.text.trim());
     await db.setSetting(SettingsKeys.smtpHost, _host.text.trim());
     await db.setSetting(SettingsKeys.smtpPort, _port.text.trim());
     await db.setSetting(SettingsKeys.smtpUser, _smtpUser.text.trim());
@@ -703,8 +763,9 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
   }
 
   /// Importiert eine (neue) Lizenzdatei in eine bereits freigeschaltete
-  /// Installation – z.B. wenn der Entwickler eine aktualisierte Datei
-  /// schickt, die zusätzlich sein Entwickler-Passwort mitbringt.
+  /// Installation – z.B. wenn der Entwickler eine korrigierte Datei mit
+  /// geändertem Namen schickt. Der Name kommt aus der Datei und wird als
+  /// Lizenz- und Anzeigename übernommen.
   Future<void> _lizenzImportieren() async {
     final ergebnis = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -715,19 +776,68 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
     if (bytes == null || !mounted) return;
     setState(() => _lizenzLaeuft = true);
     try {
-      final lizenzname = (await ref.read(dbProvider).branding()).firmenname;
-      final lizenzErgebnis = await ref
-          .read(lizenzProvider)
-          .dateiEinloesen(utf8.decode(bytes), lizenzname);
+      final lizenzErgebnis =
+          await ref.read(lizenzProvider).dateiEinloesen(utf8.decode(bytes));
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(lizenzErgebnis is LizenzOk
-              ? 'Lizenzdatei importiert.'
-              : (lizenzErgebnis as LizenzFehler).meldung)));
+      String meldung;
+      if (lizenzErgebnis is LizenzOk) {
+        final name = (await ref.read(dbProvider).branding()).firmenname;
+        // Neuer Name soll sofort überall sichtbar sein (Monatsansicht,
+        // Profil, Exporte).
+        ref.invalidate(einzelUserProvider);
+        meldung = 'Lizenzdatei importiert – freigeschaltet für: $name';
+      } else {
+        meldung = (lizenzErgebnis as LizenzFehler).meldung;
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(meldung)));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Import fehlgeschlagen: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _lizenzLaeuft = false);
+    }
+  }
+
+  /// Exportiert die gespeicherte, signierte Lizenz als Datei – z.B. zum
+  /// Freischalten auf einem anderen Gerät oder einer anderen Plattform.
+  Future<void> _lizenzExportieren() async {
+    setState(() => _lizenzLaeuft = true);
+    try {
+      final json = await ref.read(lizenzProvider).exportiereLizenzdatei();
+      final name = (await ref.read(dbProvider).branding()).firmenname;
+      final dateiname = lizenzDateiName(name);
+      // Der Desktop hat keinen System-Teilen-Dialog für Dateien – dort
+      // stattdessen „Speichern unter" (wie bei der Datensicherung).
+      final desktop = !kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.windows ||
+              defaultTargetPlatform == TargetPlatform.linux ||
+              defaultTargetPlatform == TargetPlatform.macOS);
+      if (desktop) {
+        final pfad = await plattform.speichereDatei('Lizenzdatei speichern',
+            dateiname, ['json'], Uint8List.fromList(utf8.encode(json)));
+        if (pfad != null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Lizenzdatei gespeichert: $pfad')));
+        }
+        return;
+      }
+      await SharePlus.instance.share(ShareParams(
+        files: [
+          XFile.fromData(Uint8List.fromList(utf8.encode(json)),
+              name: dateiname, mimeType: 'application/json'),
+        ],
+        subject: 'Zeitexa Lizenzdatei',
+        text: 'Zeitexa-Lizenzdatei zum Importieren auf einem anderen Gerät.',
+      ));
+    } on StateError {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content:
+                Text('Keine Lizenz vorhanden – erst per Code freischalten.')));
       }
     } finally {
       if (mounted) setState(() => _lizenzLaeuft = false);
@@ -752,6 +862,14 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
                 labelText: 'Empfänger der Monatsberichte',
                 helperText:
                     'z.B. Auftraggeber, Steuerberater oder die eigene Adresse')),
+        TextField(
+          controller: _betreffVorlage,
+          decoration: const InputDecoration(
+            labelText: 'Betreff der Export-Mails',
+            helperText: 'Platzhalter: {Mitarbeiter} {Monat} {Jahr} '
+                '{Firma} {Zeitraum}',
+          ),
+        ),
         const SizedBox(height: 8),
         if (smtpMoeglich) ...[
           TextField(
@@ -881,13 +999,18 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
         const Divider(height: 32),
         Text('Lizenz', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 4),
+        Text(
+            'Freigeschaltet für: '
+            '${ref.watch(brandingProvider).value?.firmenname ?? '…'}',
+            style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 4),
         const Text(
-            'Hier kann eine neue Lizenzdatei des Entwicklers eingespielt '
-            'werden (die Freischaltung selbst bleibt dabei erhalten).'),
+            'Die Lizenz gilt für diese Person; der Name lässt sich nur über '
+            'eine neue Lizenzdatei des Entwicklers ändern. Mit „Exportieren" '
+            'kann die Lizenz auf ein anderes Gerät mitgenommen werden.'),
         const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: OutlinedButton.icon(
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          OutlinedButton.icon(
             onPressed: _lizenzLaeuft ? null : _lizenzImportieren,
             icon: _lizenzLaeuft
                 ? const SizedBox(
@@ -897,7 +1020,12 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
                 : const Icon(Icons.file_open_outlined),
             label: const Text('Lizenzdatei importieren…'),
           ),
-        ),
+          OutlinedButton.icon(
+            onPressed: _lizenzLaeuft ? null : _lizenzExportieren,
+            icon: const Icon(Icons.ios_share),
+            label: const Text('Lizenzdatei exportieren…'),
+          ),
+        ]),
         const SizedBox(height: 80),
       ],
     );
@@ -917,9 +1045,8 @@ const _farben = <int, String>{
   0xFF827717: 'Oliv',
 };
 
-/// Logo und Akzentfarbe darf der Nutzer selbst bestimmen – reine Kosmetik
-/// ohne Einfluss auf Lizenz oder Berechnung. Der lizenzgebundene Name
-/// bleibt dagegen im Entwicklerbereich (siehe lib/ui/branding_screen.dart).
+/// Die Akzentfarbe darf der Nutzer selbst bestimmen – reine Kosmetik ohne
+/// Einfluss auf Lizenz oder Berechnung.
 class _DarstellungAbschnitt extends ConsumerStatefulWidget {
   const _DarstellungAbschnitt();
 
@@ -929,7 +1056,6 @@ class _DarstellungAbschnitt extends ConsumerStatefulWidget {
 }
 
 class _DarstellungAbschnittState extends ConsumerState<_DarstellungAbschnitt> {
-  Uint8List? _logo;
   int _farbe = 0xFF1565C0;
   bool _geladen = false;
 
@@ -939,7 +1065,6 @@ class _DarstellungAbschnittState extends ConsumerState<_DarstellungAbschnitt> {
     ref.read(dbProvider).branding().then((b) {
       if (!mounted) return;
       setState(() {
-        _logo = b.logo;
         _farbe = b.akzentFarbe;
         _geladen = true;
       });
@@ -948,20 +1073,12 @@ class _DarstellungAbschnittState extends ConsumerState<_DarstellungAbschnitt> {
 
   Future<void> _speichern() async {
     final db = ref.read(dbProvider);
-    await (db.update(db.brandings)..where((t) => t.id.equals(1))).write(
-        BrandingsCompanion(
-            logo: Value(_logo), akzentFarbe: Value(_farbe)));
+    await (db.update(db.brandings)..where((t) => t.id.equals(1)))
+        .write(BrandingsCompanion(akzentFarbe: Value(_farbe)));
     if (mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Darstellung übernommen.')));
     }
-  }
-
-  Future<void> _logoWaehlen() async {
-    final ergebnis =
-        await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
-    final bytes = ergebnis?.files.firstOrNull?.bytes;
-    if (bytes != null) setState(() => _logo = bytes);
   }
 
   @override
@@ -972,26 +1089,8 @@ class _DarstellungAbschnittState extends ConsumerState<_DarstellungAbschnitt> {
       children: [
         Text('Darstellung', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 4),
-        const Text('Logo und Farbe erscheinen in der App und auf dem '
+        const Text('Die Farbe erscheint in der App und auf dem '
             'PDF-Bericht.'),
-        const SizedBox(height: 12),
-        Row(children: [
-          if (_logo != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Image.memory(_logo!, height: 48),
-            ),
-          OutlinedButton.icon(
-            onPressed: _logoWaehlen,
-            icon: const Icon(Icons.image_outlined),
-            label: Text(_logo == null ? 'Logo wählen…' : 'Logo ersetzen…'),
-          ),
-          if (_logo != null)
-            TextButton(
-              onPressed: () => setState(() => _logo = null),
-              child: const Text('Entfernen'),
-            ),
-        ]),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,

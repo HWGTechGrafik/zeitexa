@@ -7,11 +7,19 @@ import 'package:zeitexa/main.dart';
 import 'package:zeitexa/ui/setup_screen.dart';
 
 /// Der Branding-Stream der echten Datenbank haelt im Test einen Timer
-/// offen; fuer die Ersteinrichtung wird er nicht gebraucht.
+/// offen; deshalb wird er mit einem festen Wert ueberschrieben. Der
+/// Willkommensbildschirm liest daraus den Lizenznamen.
 Widget _app(ZeitexaDb db) => ProviderScope(
       overrides: [
         dbProvider.overrideWithValue(db),
-        brandingProvider.overrideWith((ref) => const Stream<Branding>.empty()),
+        brandingProvider.overrideWith((ref) => Stream.value(const Branding(
+              id: 1,
+              firmenname: 'Max Muster',
+              adresse: '',
+              telefon: '',
+              email: '',
+              akzentFarbe: 0xFF1565C0,
+            ))),
       ],
       child: const MaterialApp(home: SetupScreen()),
     );
@@ -24,7 +32,8 @@ Future<void> _pumpe(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('Ersteinrichtung fragt nur nach dem Namen', (tester) async {
+  testWidgets('Willkommensbildschirm zeigt den Lizenznamen und fragt nichts ab',
+      (tester) async {
     final db = ZeitexaDb.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
 
@@ -32,22 +41,21 @@ void main() {
     await _pumpe(tester);
 
     expect(find.text('Willkommen bei Zeitexa'), findsOneWidget);
-    expect(find.text('Dein Name'), findsOneWidget);
-    // Kein Login, kein Adminpasswort, keine Benutzerverwaltung.
-    expect(find.textContaining('Benutzername'), findsNothing);
-    expect(find.textContaining('Adminpasswort'), findsNothing);
+    expect(find.text('Max Muster'), findsOneWidget);
+    // Kein Namensfeld, kein Login, kein Adminpasswort.
+    expect(find.byType(TextFormField), findsNothing);
+    expect(find.byType(TextField), findsNothing);
     expect(find.textContaining('Passwort'), findsNothing);
-    expect(find.byType(TextFormField), findsOneWidget);
   });
 
-  testWidgets('nach dem Anlegen existiert genau ein Profil', (tester) async {
+  testWidgets('„Los geht’s" legt genau ein Profil mit dem Lizenznamen an',
+      (tester) async {
     final db = ZeitexaDb.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
 
     await tester.pumpWidget(_app(db));
     await _pumpe(tester);
 
-    await tester.enterText(find.byType(TextFormField), 'Max Muster');
     await tester.tap(find.text('Los geht’s'));
     await _pumpe(tester);
 
@@ -57,19 +65,5 @@ void main() {
     // Die Werte sind noch ungeprüft – die Hinweiskarte muss erscheinen.
     expect(await db.getBoolSetting(SettingsKeys.einstellungenGeprueft),
         isFalse);
-  });
-
-  testWidgets('ohne Namen wird nichts angelegt', (tester) async {
-    final db = ZeitexaDb.forTesting(NativeDatabase.memory());
-    addTearDown(db.close);
-
-    await tester.pumpWidget(_app(db));
-    await _pumpe(tester);
-
-    await tester.tap(find.text('Los geht’s'));
-    await _pumpe(tester);
-
-    expect(find.text('Name angeben'), findsOneWidget);
-    expect(await db.allUsers(), isEmpty);
   });
 }

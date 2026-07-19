@@ -13,9 +13,11 @@ Nur der JSON-Monatsexport ist zwischen beiden lesbar.
 
 ## Funktionen
 
-- **Lizenz (Ed25519)**: Beim allerersten Start wird die App mit dem Namen des
-  Lizenznehmers + Freischaltcode (oder Lizenzdatei) freigeschaltet; ohne
-  gültige Lizenz bleibt sie gesperrt
+- **Lizenz (Ed25519)**: Beim allerersten Start wird die App mit einer
+  Lizenzdatei (enthält den Namen des Lizenznehmers) oder mit Name +
+  Freischaltcode freigeschaltet; ohne gültige Lizenz bleibt sie gesperrt.
+  Der Lizenzname ist zugleich der Anzeigename auf allen Berichten und nur
+  über eine neue Lizenz änderbar
 - **Keine Anmeldung**: genau ein Profil, die App startet direkt in die
   Monatsansicht. Optionale **App-Sperre** mit selbst vergebenem Passwort
   (Standard: aus), auf Wunsch zusätzlich Entsperren per Fingerabdruck
@@ -29,27 +31,30 @@ Nur der JSON-Monatsexport ist zwischen beiden lesbar.
   erkannt), Zeitausgleich, Sonderurlaub (mit Anlass), Zusatzurlaub
 - **Sollstunden**: ein genereller Tagessatz ODER Mo–Do und Freitag getrennt,
   mit optionalen eigenen Freitags-Standardzeiten; Sa/So zählen nicht als Soll
-- **Monatsexport** als JSON + Excel + PDF (mit Logo und Unterschriftszeile)
+- **Monatsexport** als JSON + Excel + PDF (Briefkopf mit Name/Adresse,
+  Unterschriftszeilen für Nutzer und Auftraggeber)
 - **Mailversand**: automatisch per SMTP (wenn konfiguriert) oder über die
   Mail-App des Geräts (Teilen)
-- **Verwaltung** (ohne Passwort, alles selbst einstellbar): Profil und
-  Sollstunden, Anfangsstände, Optionen, Logo/Akzentfarbe, Datensicherung,
-  **Auswertung** über einen frei wählbaren Zeitraum mit Excel-/PDF-Export
+- **Verwaltung** (ohne Passwort, alles selbst einstellbar): Profil mit
+  Briefkopf-Kontaktdaten und Sollstunden, Anfangsstände, Optionen
+  (Mail inkl. Betreffvorlage, Akzentfarbe, Lizenz-Import/-Export),
+  Datensicherung, **Auswertung** über einen frei wählbaren Zeitraum mit
+  Excel-/PDF-Export. Einen versteckten Entwickler-Bereich gibt es seit
+  v1.1.0 nicht mehr
 - **Datensicherung** (Windows/Android): komplette Datenbank als
   `.zeitexadb`-Datei sichern und wiederherstellen; Sicherungen fremder
   Produkte werden anhand einer Produktkennung abgewiesen
-- **Versteckter Entwickler-Bereich** (7× auf die Versionsnummer im
-  „Über Zeitexa"-Dialog tippen, Passwort aus der Lizenzdatei): der
-  lizenzgebundene Name sowie Adresse und Betreffvorlage
 
 ## Erste Schritte in der App
 
-1. Beim allerersten Start: Namen des Lizenznehmers + Freischaltcode eingeben
-   bzw. Lizenzdatei importieren (erzeugt `tools\lizenz_gui` bzw.
-   `tools\lizenz_generator`).
-2. Anzeigenamen eintragen – fertig.
-3. Verwaltung → Mein Profil: Sollstunden, Anfangsstände und Standardzeiten
-   setzen und speichern (danach verschwindet die Hinweiskarte).
+1. Beim allerersten Start: Lizenzdatei importieren (der Name kommt aus der
+   Datei) oder Namen des Lizenznehmers + Freischaltcode eingeben (erzeugt
+   `tools\lizenz_gui` bzw. `tools\lizenz_generator`).
+2. Willkommensbildschirm mit „Los geht's" bestätigen – das Profil wird mit
+   dem Lizenznamen angelegt.
+3. Verwaltung → Mein Profil: Briefkopf, Sollstunden, Anfangsstände und
+   Standardzeiten setzen und speichern (danach verschwindet die
+   Hinweiskarte).
 4. Verwaltung → Optionen: Empfänger der Monatsberichte (und optional SMTP)
    eintragen.
 

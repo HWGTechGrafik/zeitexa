@@ -9,9 +9,11 @@ import '../main.dart';
 import 'zeitexa_logo.dart';
 
 /// Erster Schritt beim Start: wird gezeigt, solange keine gültige Lizenz
-/// vorliegt. Fragt den Lizenznamen und den Freischaltcode gemeinsam ab; alternativ
-/// kann eine signierte Lizenzdatei importiert werden. Erst nach
-/// erfolgreicher Freischaltung geht es zur Ersteinrichtung bzw. zum Login.
+/// vorliegt. Zwei Wege: Lizenzdatei importieren (der Name des Lizenznehmers
+/// steckt signiert in der Datei) oder Freischaltcode eintippen (der Code
+/// trägt den Namen nur als Prüfsumme, deshalb muss er dazu exakt
+/// eingetippt werden). Erst nach erfolgreicher Freischaltung geht es zum
+/// Willkommensbildschirm.
 class LizenzScreen extends ConsumerStatefulWidget {
   const LizenzScreen({super.key});
 
@@ -81,7 +83,7 @@ class _LizenzScreenState extends ConsumerState<LizenzScreen> {
     try {
       final inhalt = utf8.decode(bytes);
       final lizenzErgebnis =
-          await ref.read(lizenzProvider).dateiEinloesen(inhalt, _firma.text);
+          await ref.read(lizenzProvider).dateiEinloesen(inhalt);
       await _ergebnisVerarbeiten(lizenzErgebnis);
     } finally {
       if (mounted) setState(() => _laeuft = false);
@@ -107,12 +109,23 @@ class _LizenzScreenState extends ConsumerState<LizenzScreen> {
                     textAlign: TextAlign.center),
                 const SizedBox(height: 8),
                 const Text(
-                  'Bitte den Namen genau so eingeben, wie ihn der '
-                  'Entwickler für den Freischaltcode vorgegeben hat, und '
-                  'dann den Code eintippen oder die Lizenzdatei importieren.',
+                  'Am einfachsten die Lizenzdatei des Entwicklers '
+                  'importieren – sie enthält deinen Namen bereits.',
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  icon: const Icon(Icons.file_open_outlined),
+                  label: const Text('Lizenzdatei importieren'),
+                  onPressed: _laeuft ? null : _dateiImportieren,
+                ),
                 const SizedBox(height: 24),
+                const Text(
+                  'Oder mit dem Freischaltcode: dazu den Namen genau so '
+                  'eintippen, wie ihn der Entwickler vorgegeben hat.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: _firma,
                   decoration: const InputDecoration(
@@ -132,7 +145,7 @@ class _LizenzScreenState extends ConsumerState<LizenzScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                FilledButton(
+                OutlinedButton(
                   onPressed: _laeuft ? null : _codePruefen,
                   child: _laeuft
                       ? const SizedBox(
@@ -140,12 +153,6 @@ class _LizenzScreenState extends ConsumerState<LizenzScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2))
                       : const Text('Code prüfen & freischalten'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.file_open_outlined),
-                  label: const Text('Lizenzdatei importieren'),
-                  onPressed: _laeuft ? null : _dateiImportieren,
                 ),
                 if (_fehler != null) ...[
                   const SizedBox(height: 16),

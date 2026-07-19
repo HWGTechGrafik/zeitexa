@@ -12,7 +12,7 @@ import 'mail_smtp_stub.dart' if (dart.library.io) 'mail_smtp_io.dart'
 import 'monats_daten.dart';
 import 'pdf_export.dart';
 
-/// Standard-Betreffvorlage, im Entwickler-Bereich änderbar. Platzhalter:
+/// Standard-Betreffvorlage, änderbar in Verwaltung → Optionen. Platzhalter:
 /// {Mitarbeiter} {Monat} {Jahr} {Firma} {Zeitraum}.
 const kBetreffVorlageStandard = 'Zeiterfassung – {Mitarbeiter} – {Monat} {Jahr}';
 
@@ -78,14 +78,12 @@ class ExportService {
         ortNamen: orte);
     final xlsx = excelExport(
         branding: branding,
-        anzeigename: user.displayName,
         jahr: jahr,
         monat: monat,
         zeilen: zeilen,
         summe: summe);
     final pdf = await pdfExport(
         branding: branding,
-        anzeigename: user.displayName,
         jahr: jahr,
         monat: monat,
         zeilen: zeilen,
@@ -101,7 +99,7 @@ class ExportService {
     );
   }
 
-  /// Setzt die Betreff-Vorlage (Entwickler-Bereich) mit den Platzhaltern
+  /// Setzt die Betreff-Vorlage (Verwaltung → Optionen) mit den Platzhaltern
   /// {Mitarbeiter} {Monat} {Jahr} {Firma} {Zeitraum} um.
   Future<String> berechneBetreff(User user, int jahr, int monat,
       {Branding? branding}) async {
@@ -147,7 +145,7 @@ class ExportService {
     final smtp = await _smtpDaten();
     if (smtp.host.isEmpty || smtp.ziel.isEmpty) {
       throw StateError('SMTP oder Ziel-Mailadresse ist nicht konfiguriert '
-          '(Chef-Bereich → Mail-Einstellungen).');
+          '(Verwaltung → Optionen → Mailversand).');
     }
     await plattform.sendeSmtpMail(
       host: smtp.host,

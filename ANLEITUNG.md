@@ -73,18 +73,16 @@ Beim allerersten Start führt Zeitexa durch zwei kurze Schritte.
 
 ### Schritt 1: Freischalten
 
-Es erscheint der Bildschirm **„Zeitexa freischalten"**:
+Es erscheint der Bildschirm **„Zeitexa freischalten"**. Zwei Wege:
 
-1. **Name des Lizenznehmers** eingeben – genau der Name, für den die Freischaltung ausgestellt ist (Groß-/Kleinschreibung und Leerzeichen spielen keine Rolle).
-2. Dann entweder:
-   - den **Freischaltcode** eintippen bzw. hineinkopieren (langer Buchstaben-/Zahlencode; Leerzeichen und Zeilenumbrüche stören nicht) und auf **„Code prüfen & freischalten"** tippen, **oder**
-   - auf **„Lizenzdatei importieren"** tippen und die Lizenzdatei (`….zeitexalizenz.json`) auswählen.
+- **Lizenzdatei (empfohlen):** auf **„Lizenzdatei importieren"** tippen und die Datei (`….zeitexalizenz.json`) auswählen – fertig. Ihr Name steckt bereits in der Datei.
+- **Freischaltcode:** zuerst den **Namen des Lizenznehmers** eingeben – genau der Name, für den die Freischaltung ausgestellt ist (Groß-/Kleinschreibung und Leerzeichen spielen keine Rolle) – und dann den Code eintippen bzw. hineinkopieren (langer Buchstaben-/Zahlencode; Leerzeichen und Zeilenumbrüche stören nicht). Auf **„Code prüfen & freischalten"** tippen.
 
 Dieselbe Freischaltung gilt für alle Ihre Geräte (PC, Handy, iPhone).
 
-### Schritt 2: Namen eintragen
+### Schritt 2: Willkommen
 
-Danach erscheint **„Willkommen bei Zeitexa"**. Gefragt wird nur **Ihr Name** – er steht später auf Auswertungen und Exporten. Auf **„Los geht's"** tippen, fertig.
+Danach erscheint **„Willkommen bei Zeitexa"** mit dem Namen, für den die Lizenz gilt. Dieser Name steht später auf allen Berichten; er kommt aus der Lizenz und lässt sich in der App nicht ändern. Auf **„Los geht's"** tippen, fertig.
 
 **Danach unbedingt einmal die Verwaltung öffnen:** Zeitexa rechnet zunächst mit Vorgabewerten (8 Stunden Mo–Do, 5 Stunden Freitag, Urlaubsstände auf 0). Solange Sie diese Werte nicht bestätigt haben, steht in der Monatsansicht ein Hinweisbalken mit dem Knopf **„Jetzt einstellen"**. Ein Klick darauf führt direkt an die richtige Stelle (siehe Abschnitt 4.1). Der Balken verschwindet, sobald Sie dort einmal gespeichert haben.
 
@@ -141,7 +139,8 @@ Menü (⋮) → **„Verwaltung"**. Drei Reiter:
 
 Hier stehen alle Werte, mit denen Zeitexa rechnet:
 
-- **Ihr Name** und Ihre **E-Mail-Adresse** (für die eigene Kopie beim Mail-Export).
+- **Ihr Name (aus der Lizenz):** wird nur angezeigt – er ist an die Lizenz gebunden und lässt sich nur über eine neue Lizenzdatei des Entwicklers ändern. Dazu Ihre **E-Mail-Adresse** (für die eigene Kopie beim Mail-Export).
+- **Briefkopf der Berichte:** Adresse, Telefon und E-Mail, die unter Ihrem Namen im Kopf der PDF-Berichte erscheinen. Leere Felder werden weggelassen.
 - **Sollstunden:** entweder gleich für alle Tage (Mo–Fr) oder **Mo–Do und Freitag getrennt**.
 - **Anfangsstand:** Der **Stichtag** ist der Tag, ab dem Zeitexa mitrechnet. Tragen Sie hier ein, wie viel Resturlaub und wie viele Plus-/Minusstunden Sie an diesem Tag hatten – alles Weitere schreibt die App selbst fort.
   - **„Freitags-Urlaub getrennt führen":** eigenes Urlaubskonto für Freitage.
@@ -153,12 +152,12 @@ Nicht vergessen: unten auf **„Speichern"**. Damit verschwindet auch der Hinwei
 
 ### 4.2 Reiter „Optionen"
 
-- **Mailversand:** Empfänger der Monatsberichte (z. B. Auftraggeber, Steuerberater oder die eigene Adresse) sowie die Zugangsdaten Ihres Postausgangsservers (SMTP-Server, Port, Benutzer, Passwort). Mit **„Testmail senden"** lässt sich das sofort prüfen. Optional: **automatischer Versand am Monatsanfang**.
+- **Mailversand:** Empfänger der Monatsberichte (z. B. Auftraggeber, Steuerberater oder die eigene Adresse), der **Betreff der Export-Mails** (mit Platzhaltern wie {Monat} und {Jahr}) sowie die Zugangsdaten Ihres Postausgangsservers (SMTP-Server, Port, Benutzer, Passwort). Mit **„Testmail senden"** lässt sich das sofort prüfen. Optional: **automatischer Versand am Monatsanfang**.
 - **Bedienung:** „Heute-Knopf öffnet den Tageseintrag".
 - **Sicherheit – App-Sperre:** Standardmäßig **aus**. Eingeschaltet fragt Zeitexa beim Start nach einem Passwort, das Sie selbst vergeben. **Dieses Passwort lässt sich nicht wiederherstellen – notieren Sie es.** Zusätzlich kann (Windows/Android) das **Entsperren per Fingerabdruck** aktiviert werden. Hinweis: Das Gerät unterscheidet keine Personen – jeder dort hinterlegte Fingerabdruck kann entsperren.
-- **Darstellung:** eigenes **Logo** und eine **Akzentfarbe** wählen. Beides erscheint in der App und auf dem PDF-Bericht.
+- **Darstellung:** eine **Akzentfarbe** wählen. Sie erscheint in der App und auf dem PDF-Bericht.
 - **Datensicherung** (nicht in der Web-App): **„Sicherung erstellen…"** schreibt alle Daten in eine Datei `Zeitexa_Sicherung_JJJJ-MM-TT.zeitexadb`, **„Sicherung wiederherstellen…"** spielt sie zurück. Beim Wiederherstellen wird der gesamte Bestand ersetzt. Sicherungen anderer Programme (etwa der Firmenversion Zeitrax) weist Zeitexa ab.
-- **Lizenz:** eine neue Lizenzdatei des Entwicklers einspielen.
+- **Lizenz:** zeigt, für wen die App freigeschaltet ist. **„Lizenzdatei importieren…"** spielt eine neue Datei des Entwicklers ein (z. B. bei einer Namenskorrektur – der neue Name gilt dann sofort überall). **„Lizenzdatei exportieren…"** speichert Ihre Lizenz als Datei, um sie auf einem anderen Gerät zu importieren.
 
 ### 4.3 Reiter „Auswertung"
 
@@ -171,11 +170,11 @@ Zeitraum wählen (von/bis) und Zeitexa zeigt eine Vorschau: eine Zeile je Monat 
 **Ich habe mein App-Sperre-Passwort vergessen.**
 Es lässt sich nicht zurücksetzen – es ist verschlüsselt gespeichert. Ohne Sicherung hilft nur eine Neuinstallation, dabei gehen die Daten verloren. Deshalb: Passwort notieren und regelmäßig eine Sicherung erstellen.
 
-**Ich habe mich beim Namen für die Lizenz vertippt.**
-Melden Sie sich beim Entwickler – er kann den hinterlegten Namen mit seinem Passwort direkt korrigieren.
+**Mein Name ist in der Lizenz falsch geschrieben (oder hat sich geändert).**
+Melden Sie sich beim Entwickler – er stellt eine korrigierte Lizenzdatei aus. Diese unter Verwaltung → Optionen → **„Lizenzdatei importieren…"** einspielen; der neue Name gilt sofort überall (auch auf den Berichten).
 
 **Kann ich Zeitexa auf mehreren Geräten nutzen?**
-Ja. Freischalten mit demselben Code, danach den Namen eintragen. Die Geräte gleichen sich aber **nicht** miteinander ab – jedes führt seinen eigenen Bestand. Um umzuziehen, verwenden Sie „Sicherung erstellen" und spielen die Datei am neuen Gerät ein.
+Ja. Am einfachsten unter Verwaltung → Optionen die **Lizenzdatei exportieren** und am neuen Gerät importieren (oder dort denselben Freischaltcode eingeben). Die Geräte gleichen sich aber **nicht** miteinander ab – jedes führt seinen eigenen Bestand. Um komplett umzuziehen, verwenden Sie „Sicherung erstellen" und spielen die Datei am neuen Gerät ein.
 
 **Stimmen die Zahlen auch rückwirkend, wenn ich meine Sollstunden später ändere?**
 Ja. Zeitexa rechnet immer mit den aktuellen Einstellungen und schreibt die Konten ab dem Stichtag fort.

@@ -146,9 +146,4 @@ class AuthService {
           UsersCompanion(
               passwordHash: Value(hash(neuesPasswort)),
               mustChangePassword: const Value(false)));
-
-  Future<bool> pruefeBrandingPasswort(String passwort) async {
-    final gespeichert = await db.getSetting(SettingsKeys.brandingPasswordHash);
-    return gespeichert != null && pruefe(passwort, gespeichert);
-  }
 }

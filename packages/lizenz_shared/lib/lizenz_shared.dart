@@ -325,9 +325,10 @@ SignierteLizenz parseFreischaltcode(String eingabe) {
 
 /// Erstellt den JSON-Inhalt einer exportierbaren Lizenzdatei.
 ///
-/// [firmenname] wird nur zur Anzeige mitgespeichert (nicht mitsigniert) -
-/// massgeblich fuer die Pruefung ist ausschliesslich der Firmen-Hash im
-/// signierten Payload, verglichen mit dem in der App eingegebenen Namen.
+/// [firmenname] wird im Klartext mitgespeichert (nicht mitsigniert). Die
+/// App uebernimmt ihn beim Import als Name des Lizenznehmers - aber erst,
+/// nachdem [pruefeLizenz] ihn gegen den signierten Namens-Hash im Payload
+/// verifiziert hat. Ein manipulierter Klartext-Name faellt dabei durch.
 String erstelleLizenzdateiJson(SignierteLizenz lizenz, String firmenname) {
   final map = {
     'formatVersion': lizenz.payload[0],
@@ -340,17 +341,38 @@ String erstelleLizenzdateiJson(SignierteLizenz lizenz, String firmenname) {
   return const JsonEncoder.withIndent('  ').convert(map);
 }
 
+/// Inhalt einer eingelesenen Lizenzdatei: die signierte Lizenz plus der
+/// im Klartext gespeicherte Name des Lizenznehmers (falls vorhanden).
+class LizenzdateiInhalt {
+  final SignierteLizenz lizenz;
+
+  /// Klartext-Name aus der Datei. Unsigniert - vor der Verwendung immer
+  /// mit [pruefeLizenz] gegen den signierten Hash verifizieren.
+  final String? name;
+
+  LizenzdateiInhalt({required this.lizenz, required this.name});
+}
+
 /// Liest eine signierte Lizenzdatei (siehe [erstelleLizenzdateiJson]) ein.
 /// Wirft [FormatException] bei ungueltigem Format.
-SignierteLizenz parseLizenzdateiJson(String json) {
+SignierteLizenz parseLizenzdateiJson(String json) =>
+    parseLizenzdatei(json).lizenz;
+
+/// Wie [parseLizenzdateiJson], liefert zusaetzlich den in der Datei
+/// gespeicherten Namen des Lizenznehmers mit.
+LizenzdateiInhalt parseLizenzdatei(String json) {
   final map = jsonDecode(json);
   if (map is! Map || map['payloadBase64'] is! String || map['signaturBase64'] is! String) {
     throw const FormatException('Ungueltige Lizenzdatei.');
   }
   final payload = base64.decode(map['payloadBase64'] as String);
   final signatur = base64.decode(map['signaturBase64'] as String);
-  return SignierteLizenz(
-    payload: Uint8List.fromList(payload),
-    signatur: Uint8List.fromList(signatur),
+  final name = map['firmenname'];
+  return LizenzdateiInhalt(
+    lizenz: SignierteLizenz(
+      payload: Uint8List.fromList(payload),
+      signatur: Uint8List.fromList(signatur),
+    ),
+    name: name is String && name.trim().isNotEmpty ? name.trim() : null,
   );
 }

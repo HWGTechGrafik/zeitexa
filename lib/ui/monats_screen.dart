@@ -295,7 +295,7 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
                   await oeffneVerwaltung(context, ref);
                   _lade();
                 case 'ueber':
-                  await zeigeUeberDialog(context, ref);
+                  await zeigeUeberDialog(context);
               }
             },
             itemBuilder: (context) => const [

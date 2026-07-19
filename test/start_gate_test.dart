@@ -1,4 +1,5 @@
 import 'package:cryptography/cryptography.dart';
+import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,7 +9,8 @@ import 'package:zeitexa/logic/lizenz_service.dart';
 import 'package:zeitexa/main.dart';
 
 /// Kompletter Start-Ablauf auf Provider-Ebene: erst Lizenz, dann
-/// Ersteinrichtung (nur Name), dann bereit – ohne jede Anmeldung.
+/// Ersteinrichtung (Profil mit dem Lizenznamen), dann bereit – ohne jede
+/// Anmeldung.
 void main() {
   test('StartGate-Reihenfolge: keineLizenz → nichtEingerichtet → bereit',
       () async {
@@ -42,16 +44,27 @@ void main() {
     expect(await container.read(gateStatusProvider.future),
         GateStatus.nichtEingerichtet);
 
-    // Ersteinrichtung: nur der Anzeigename.
-    await container.read(authProvider).ersteinrichtung(anzeigename: 'Max');
+    // Ersteinrichtung: Profil mit dem Lizenznamen anlegen.
+    await container
+        .read(authProvider)
+        .ersteinrichtung(anzeigename: 'Max Muster');
     container.invalidate(gateStatusProvider);
     expect(await container.read(gateStatusProvider.future), GateStatus.bereit);
     expect((await db.branding()).firmenname, 'Max Muster');
 
     // Genau ein Profil, und es ist ohne Anmeldung erreichbar.
     final user = await container.read(authProvider).einzelUser();
-    expect(user?.displayName, 'Max');
+    expect(user?.displayName, 'Max Muster');
     expect(await db.allUsers(), hasLength(1));
+
+    // Selbst wenn der Anzeigename in der Datenbank abweichen sollte
+    // (Altinstallation), zieht ihn das Gate beim Start auf den Lizenznamen.
+    await db.update(db.users).write(
+        const UsersCompanion(displayName: drift.Value('Fremder Name')));
+    container.invalidate(gateStatusProvider);
+    expect(await container.read(gateStatusProvider.future), GateStatus.bereit);
+    expect((await container.read(authProvider).einzelUser())?.displayName,
+        'Max Muster');
   });
 
   test('App-Sperre ist standardmäßig aus und lässt sich setzen und entfernen',

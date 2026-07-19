@@ -7,10 +7,11 @@ import '../logic/berechnung.dart';
 import 'monats_daten.dart';
 
 /// Erzeugt die Excel-Monatsübersicht (ein Tabellenblatt, Spalten wie in
-/// der Monatsansicht, Summenzeile am Ende, Branding im Kopf).
+/// der Monatsansicht, Summenzeile am Ende, Briefkopf mit dem Lizenznamen).
+/// Wie beim PDF steht der Name nur einmal im Kopf – eine separate
+/// „Mitarbeiter"-Angabe gibt es in der Einzelnutzer-Version nicht.
 Uint8List excelExport({
   required Branding branding,
-  required String anzeigename,
   required int jahr,
   required int monat,
   required List<MonatsZeile> zeilen,
@@ -35,7 +36,7 @@ Uint8List excelExport({
   kopfzeile([branding.firmenname]);
   if (branding.adresse.isNotEmpty) sheet.appendRow([TextCellValue(branding.adresse)]);
   sheet.appendRow([
-    TextCellValue('Stundenaufzeichnung $anzeigename – ${monatsTitel(jahr, monat)}')
+    TextCellValue('Stundenaufzeichnung – ${monatsTitel(jahr, monat)}')
   ]);
   sheet.appendRow([TextCellValue('')]);
   kopfzeile([

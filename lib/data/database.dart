@@ -165,8 +165,11 @@ class AppSettings extends Table {
   Set<Column> get primaryKey => {key};
 }
 
-/// Branding (eine Zeile, id = 1), nur über den versteckten
-/// Entwickler-Bereich änderbar.
+/// Branding (eine Zeile, id = 1). `firmenname` trägt den Namen des
+/// Lizenznehmers (nur über eine Lizenz änderbar, siehe
+/// lib/logic/lizenz_service.dart); Adresse/Telefon/E-Mail pflegt der Nutzer
+/// in der Verwaltung. `logo` wird seit v1.1.0 nicht mehr verwendet, die
+/// Spalte bleibt für die Abwärtskompatibilität von Sicherungen bestehen.
 class Brandings extends Table {
   IntColumn get id => integer()();
   TextColumn get firmenname => text().withDefault(const Constant('Zeitexa'))();
@@ -220,8 +223,6 @@ class ImportedEntries extends Table {
 const String kProduktKennung = 'ZEITEXA-SICHERUNG-V1';
 
 abstract class SettingsKeys {
-  static const brandingPasswordHash = 'brandingPasswordHash';
-
   /// Traegt [kProduktKennung]; siehe dort.
   static const produktKennung = 'produktKennung';
 
