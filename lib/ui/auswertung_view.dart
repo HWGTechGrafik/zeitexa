@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,14 +5,16 @@ import 'package:share_plus/share_plus.dart';
 
 import '../data/database.dart';
 import '../export/auswertung_export.dart';
-import '../export/json_export.dart';
+import '../logic/auswertung.dart';
 import '../logic/backup_stub.dart'
     if (dart.library.io) '../logic/backup_io.dart' as plattform;
 import '../logic/berechnung.dart';
 import '../main.dart';
 
-/// Auswertung für den Chef: JSON-Dateien der Mitarbeiter importieren und
-/// pro Mitarbeiter/Monat zusammenfassen.
+/// Auswertung des eigenen Profils: fasst alle erfassten Monate automatisch
+/// zusammen (Diagramme + Tabelle) und hält sich über den Datenbank-Stream
+/// von selbst aktuell. Kein Import nötig – anders als in der Firmenversion
+/// liegen die Daten ja schon auf diesem Gerät.
 class AuswertungView extends ConsumerStatefulWidget {
   const AuswertungView({super.key});
 
@@ -23,25 +22,9 @@ class AuswertungView extends ConsumerStatefulWidget {
   ConsumerState<AuswertungView> createState() => _AuswertungViewState();
 }
 
-/// Zusammenfassung eines Mitarbeiter-Monats.
-///
-/// Die Urlaubsarten sind `double`, weil Urlaub anteilig genommen werden kann
-/// (halber Tag, 6,25 h …) – ein halber Urlaubstag zählt hier also 0,5 und
-/// nicht mehr wie früher als ganzer.
-class MonatsAuswertung {
-  final String username;
-  final String anzeigename;
-  final String monat;
-  double ist = 0, soll = 0, ueberstunden = 0;
-  double urlaub = 0, sonderurlaub = 0, firmenurlaub = 0;
-  int krank = 0, zeitausgleich = 0, feiertage = 0, arbeitstage = 0;
-
-  MonatsAuswertung(this.username, this.anzeigename, this.monat);
-}
-
 class _AuswertungViewState extends ConsumerState<AuswertungView> {
-  List<MonatsAuswertung> _auswertungen = const [];
-  bool _laedt = true;
+  User? _user;
+  SollRegel? _regel;
 
   @override
   void initState() {
@@ -50,101 +33,22 @@ class _AuswertungViewState extends ConsumerState<AuswertungView> {
   }
 
   Future<void> _lade() async {
-    final eintraege = await ref.read(dbProvider).allImported();
-    final map = <String, MonatsAuswertung>{};
-    for (final e in eintraege) {
-      final key = '${e.quellUsername}|${e.monat}';
-      final a = map.putIfAbsent(
-          key,
-          () =>
-              MonatsAuswertung(e.quellUsername, e.quellDisplayName, e.monat));
-      final erg = berechneMitSoll(
-        tagesart: e.tagesart,
-        beginnMin: e.beginnMin,
-        pauseMin: e.pauseMin,
-        endeMin: e.endeMin,
-        soll: e.sollStunden,
-        urlaubMinuten: e.urlaubMinuten,
-      );
-      a.ist += erg.ist;
-      a.soll += erg.soll;
-      a.ueberstunden += erg.ueberstunden;
-      // Urlaubsarten anteilig zum Tagessoll zählen.
-      final anteil = tagesAnteil(
-          TagDaten(
-              datum: e.datum,
-              tagesart: e.tagesart,
-              urlaubMinuten: e.urlaubMinuten),
-          e.sollStunden);
-      switch (e.tagesart) {
-        case Tagesart.arbeit:
-          a.arbeitstage++;
-        case Tagesart.urlaub:
-          a.urlaub += anteil;
-        case Tagesart.sonderurlaub:
-          a.sonderurlaub += anteil;
-        case Tagesart.firmenurlaub:
-          a.firmenurlaub += anteil;
-        case Tagesart.krank:
-          a.krank++;
-        case Tagesart.zeitausgleich:
-          a.zeitausgleich++;
-        case Tagesart.feiertag:
-          a.feiertage++;
-        case Tagesart.frei:
-          break;
-      }
-    }
-    final liste = map.values.toList()
-      ..sort((a, b) {
-        final u = a.anzeigename.compareTo(b.anzeigename);
-        return u != 0 ? u : a.monat.compareTo(b.monat);
-      });
+    final user = await ref.read(authProvider).einzelUser();
+    if (user == null) return;
+    final regel = await ref.read(exportProvider).regelFuer(user.id);
     if (mounted) {
       setState(() {
-        _auswertungen = liste;
-        _laedt = false;
+        _user = user;
+        _regel = regel;
       });
     }
   }
 
-  Future<void> _importieren() async {
-    final ergebnis = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-      allowMultiple: true,
-      withData: true,
-    );
-    if (ergebnis == null) return;
-    var importiert = 0;
-    final fehler = <String>[];
-    for (final datei in ergebnis.files) {
-      try {
-        final bytes = datei.bytes;
-        if (bytes == null) continue;
-        final geparst = ZeitexaJson.parse(utf8.decode(bytes));
-        await ref
-            .read(dbProvider)
-            .mergeImport(geparst.username, geparst.monat, geparst.zeilen);
-        importiert++;
-      } catch (e) {
-        fehler.add('${datei.name}: $e');
-      }
-    }
-    await _lade();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(fehler.isEmpty
-              ? '$importiert Datei(en) importiert.'
-              : '$importiert importiert, Fehler:\n${fehler.join('\n')}')));
-    }
-  }
-
-  Future<void> _exportieren() async {
-    if (_auswertungen.isEmpty) return;
+  Future<void> _exportieren(List<MonatsAuswertung> auswertungen) async {
+    if (auswertungen.isEmpty) return;
     final branding = await ref.read(dbProvider).branding();
-    final xlsx = auswertungExcel(branding, _auswertungen);
-    final pdf = await auswertungPdf(branding, _auswertungen);
+    final xlsx = auswertungExcel(branding, auswertungen);
+    final pdf = await auswertungPdf(branding, auswertungen);
     // Auf dem Desktop gibt es keinen System-Teilen-Dialog für Dateien –
     // dort „Speichern unter" (Excel und PDF nacheinander), wie beim
     // Lizenz-/Benutzer-Export. Sonst der Teilen-Dialog.
@@ -180,76 +84,76 @@ class _AuswertungViewState extends ConsumerState<AuswertungView> {
 
   @override
   Widget build(BuildContext context) {
-    if (_laedt) return const Center(child: CircularProgressIndicator());
-
-    // Gruppierung nach Mitarbeiter für die Anzeige
-    final proMitarbeiter = <String, List<MonatsAuswertung>>{};
-    for (final a in _auswertungen) {
-      proMitarbeiter.putIfAbsent(a.anzeigename, () => []).add(a);
+    // Nach „Speichern" im Profil (neue Sollstunden) frisch nachladen.
+    ref.listen(einzelUserProvider, (_, _) => _lade());
+    final user = _user;
+    final regel = _regel;
+    if (user == null || regel == null) {
+      return const Center(child: CircularProgressIndicator());
     }
-
-    return Scaffold(
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (_auswertungen.isNotEmpty)
-            FloatingActionButton.extended(
-              heroTag: 'export',
-              onPressed: _exportieren,
-              icon: const Icon(Icons.ios_share),
-              label: const Text('Auswertung exportieren'),
-            ),
-          const SizedBox(height: 12),
-          FloatingActionButton.extended(
-            heroTag: 'import',
-            onPressed: _importieren,
-            icon: const Icon(Icons.file_open),
-            label: const Text('JSON-Dateien importieren'),
-          ),
-        ],
-      ),
-      body: _auswertungen.isEmpty
-          ? const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Noch keine Daten.\n\nImportiere die JSON-Dateien, die dir die '
-                  'Mitarbeiter per Mail geschickt haben – die App fasst sie dann '
-                  'pro Mitarbeiter zusammen.',
-                  textAlign: TextAlign.center,
+    return StreamBuilder<List<TimeEntry>>(
+      stream: ref.read(dbProvider).watchAllEntries(user.id),
+      builder: (context, snap) {
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final auswertungen = monatsAuswertungenAusEintraegen(
+          username: user.username,
+          anzeigename: user.displayName,
+          eintraege: snap.data!,
+          regel: regel,
+        );
+        return Scaffold(
+          floatingActionButton: auswertungen.isEmpty
+              ? null
+              : FloatingActionButton.extended(
+                  onPressed: () => _exportieren(auswertungen),
+                  icon: const Icon(Icons.ios_share),
+                  label: const Text('Auswertung exportieren'),
                 ),
-              ),
-            )
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 140),
-              children: [
-                for (final entry in proMitarbeiter.entries)
-                  Card(
-                    child: ExpansionTile(
-                      title: Text(entry.key),
-                      subtitle: Text(
-                          'Überstunden gesamt: ${formatStunden(entry.value.fold(0.0, (s, a) => s + a.ueberstunden), vorzeichen: true)} h · '
-                          'Urlaub: ${formatStunden(entry.value.fold(0.0, (s, a) => s + a.urlaub))} Tage'),
-                      children: [
-                        if (entry.value.isNotEmpty) ...[
-                          Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                            child: _UeberstundenDiagramm(monate: entry.value),
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                            child: _IstSollDiagramm(monate: entry.value),
-                          ),
-                        ],
-                        _MonatsTabelle(monate: entry.value),
-                      ],
+          body: auswertungen.isEmpty
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      'Noch keine Einträge vorhanden.\n\nSobald du Zeiten '
+                      'erfasst, erscheint hier automatisch die Auswertung '
+                      'aller Monate – ganz ohne Import.',
+                      textAlign: TextAlign.center,
                     ),
                   ),
-              ],
-            ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 100),
+                  children: [
+                    Card(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ListTile(
+                            title: Text(user.displayName),
+                            subtitle: Text(
+                                'Überstunden gesamt: ${formatStunden(auswertungen.fold(0.0, (s, a) => s + a.ueberstunden), vorzeichen: true)} h · '
+                                'Urlaub: ${formatStunden(auswertungen.fold(0.0, (s, a) => s + a.urlaub))} Tage\n'
+                                'Wird automatisch aus deinen Einträgen berechnet.'),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                            child: _UeberstundenDiagramm(monate: auswertungen),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                            child: _IstSollDiagramm(monate: auswertungen),
+                          ),
+                          _MonatsTabelle(monate: auswertungen),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+        );
+      },
     );
   }
 }

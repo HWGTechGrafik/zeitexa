@@ -243,6 +243,11 @@ abstract class SettingsKeys {
   static const smtpPass = 'smtpPass';
   static const smtpSsl = 'smtpSsl';
   static const autoSendAktiv = 'autoSendAktiv';
+
+  /// '1' = an jede Monats-Mail (SMTP wie Teilen-Dialog) wird zusätzlich
+  /// eine komplette Datensicherung angehängt, siehe
+  /// lib/export/export_service.dart. Standard: aus.
+  static const sicherungMitMail = 'sicherungMitMail';
   static const sendeSperreAktiv = 'sendeSperreAktiv';
   static const selbstRegistrierungErlaubt = 'selbstRegistrierungErlaubt';
   static const defaultSollModus = 'defaultSollModus';

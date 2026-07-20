@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:share_plus/share_plus.dart';
 
 import '../data/database.dart';
+import '../logic/backup_json.dart';
+import '../logic/backup_service.dart' show sicherungsDateiname;
 import '../logic/berechnung.dart';
 import 'excel_export.dart';
 import 'json_export.dart';
@@ -139,14 +141,25 @@ class ExportService {
             ziel: await db.getSetting(SettingsKeys.zielEmail) ?? '',
           );
 
-  /// Verschickt die vollen Daten (JSON+Excel+PDF) per SMTP an den
-  /// Chef/Hauptempfänger.
+  /// Optionaler vierter Anhang der Monats-Mail: die komplette
+  /// Datensicherung (Schalter „Sicherung an die Export-Mail anhängen" in
+  /// Verwaltung → Optionen). So liegt jeden Monat automatisch eine
+  /// aktuelle Sicherung im Mail-Postfach. Liefert null, wenn der Schalter
+  /// aus ist (Standard).
+  Future<(String, Uint8List)?> _sicherungsAnhang() async {
+    if (!await db.getBoolSetting(SettingsKeys.sicherungMitMail)) return null;
+    return (sicherungsDateiname(), await erzeugeJsonSicherung(db));
+  }
+
+  /// Verschickt die vollen Daten (JSON+Excel+PDF, optional plus
+  /// Datensicherung) per SMTP an den Hauptempfänger.
   Future<void> sendeSmtp(ExportDateien dateien) async {
     final smtp = await _smtpDaten();
     if (smtp.host.isEmpty || smtp.ziel.isEmpty) {
       throw StateError('SMTP oder Ziel-Mailadresse ist nicht konfiguriert '
           '(Verwaltung → Optionen → Mailversand).');
     }
+    final sicherung = await _sicherungsAnhang();
     await plattform.sendeSmtpMail(
       host: smtp.host,
       port: smtp.port,
@@ -155,8 +168,11 @@ class ExportService {
       passwort: smtp.pass,
       ziel: smtp.ziel,
       betreff: dateien.betreff,
-      text: 'Automatischer Export aus Zeitexa.\n\nDatei: ${dateien.basisname}\n',
-      anhaenge: dateien.alsListe,
+      text: 'Automatischer Export aus Zeitexa.\n\nDatei: ${dateien.basisname}\n'
+          '${sicherung == null ? '' : '\nMit angehängter Datensicherung '
+              '(${sicherung.$1}) – einspielbar unter Verwaltung → Optionen → '
+              '„Sicherung wiederherstellen".\n'}',
+      anhaenge: [...dateien.alsListe, ?sicherung],
     );
   }
 
@@ -198,9 +214,11 @@ class ExportService {
     );
   }
 
-  /// Fallback: Dateien über den Teilen-Dialog (Mail-App) weitergeben.
+  /// Fallback: Dateien über den Teilen-Dialog (Mail-App) weitergeben –
+  /// bei aktivem Schalter ebenfalls mit Datensicherung als Anhang.
   Future<void> teilePerMailApp(ExportDateien dateien) async {
     final ziel = await db.getSetting(SettingsKeys.zielEmail) ?? '';
+    final sicherung = await _sicherungsAnhang();
     await SharePlus.instance.share(ShareParams(
       files: [
         XFile.fromData(dateien.jsonBytes,
@@ -211,6 +229,9 @@ class ExportService {
                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
         XFile.fromData(dateien.pdfBytes,
             name: '${dateien.basisname}.pdf', mimeType: 'application/pdf'),
+        if (sicherung != null)
+          XFile.fromData(sicherung.$2,
+              name: sicherung.$1, mimeType: 'application/json'),
       ],
       subject: dateien.betreff,
       text: ziel.isEmpty

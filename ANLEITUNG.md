@@ -60,9 +60,9 @@ Für das iPhone gibt es keine App aus dem App Store. Stattdessen läuft Zeitexa 
 
 **Besonderheiten der Web-App** (gilt auch, wenn Zeitexa am PC im Browser genutzt wird):
 
-- Die Daten liegen im **Browser-Speicher** des Geräts. Achtung: Wer in Safari „Verlauf und Websitedaten löschen" ausführt, löscht auch die Zeitexa-Daten. Deshalb den Monatsbericht regelmäßig versenden.
-- **Kein automatischer Mail-Versand:** Der Monatsbericht wird über das **Teilen-Menü** weitergegeben (z. B. an die Mail-App).
-- **Keine Datensicherung und kein Entsperren per Fingerabdruck** – diese Funktionen gibt es nur in der Windows- und Android-Version.
+- Die Daten liegen im **Browser-Speicher** des Geräts. Achtung: Wer in Safari „Verlauf und Websitedaten löschen" ausführt, löscht auch die Zeitexa-Daten. Deshalb regelmäßig eine **Sicherung erstellen** (Verwaltung → Optionen → Datensicherung) und den Monatsbericht versenden.
+- **Kein automatischer Mail-Versand:** Der Monatsbericht wird über das **Teilen-Menü** weitergegeben (z. B. an die Mail-App). Auch die Sicherungsdatei geht über das Teilen-Menü hinaus (z. B. „In Dateien sichern" oder per Mail an sich selbst).
+- **Kein Entsperren per Fingerabdruck** – diese Funktion gibt es nur in der Windows- und Android-Version.
 - **Updates kommen automatisch:** Neue Versionen holt sich die App beim nächsten Öffnen mit Internetverbindung selbst (gegebenenfalls die App einmal schließen und neu öffnen).
 
 ---
@@ -152,16 +152,16 @@ Nicht vergessen: unten auf **„Speichern"**. Damit verschwindet auch der Hinwei
 
 ### 4.2 Reiter „Optionen"
 
-- **Mailversand:** Empfänger der Monatsberichte (z. B. Auftraggeber, Steuerberater oder die eigene Adresse), der **Betreff der Export-Mails** (mit Platzhaltern wie {Monat} und {Jahr}) sowie die Zugangsdaten Ihres Postausgangsservers (SMTP-Server, Port, Benutzer, Passwort). Mit **„Testmail senden"** lässt sich das sofort prüfen. Optional: **automatischer Versand am Monatsanfang**.
+- **Mailversand:** Empfänger der Monatsberichte (z. B. Auftraggeber, Steuerberater oder die eigene Adresse), der **Betreff der Export-Mails** (mit Platzhaltern wie {Monat} und {Jahr}) sowie die Zugangsdaten Ihres Postausgangsservers (SMTP-Server, Port, Benutzer, Passwort). Mit **„Testmail senden"** lässt sich das sofort prüfen. Optional: **automatischer Versand am Monatsanfang**. Mit **„Sicherung an die Export-Mail anhängen"** bekommt jede Monats-Mail (auch die automatische) zusätzlich eine komplette Datensicherung als Anhang – so liegt jeden Monat ein aktueller Stand im Postfach, ohne dass Sie daran denken müssen. Standardmäßig ist der Schalter aus.
 - **Bedienung:** „Heute-Knopf öffnet den Tageseintrag".
 - **Sicherheit – App-Sperre:** Standardmäßig **aus**. Eingeschaltet fragt Zeitexa beim Start nach einem Passwort, das Sie selbst vergeben. **Dieses Passwort lässt sich nicht wiederherstellen – notieren Sie es.** Zusätzlich kann (Windows/Android) das **Entsperren per Fingerabdruck** aktiviert werden. Hinweis: Das Gerät unterscheidet keine Personen – jeder dort hinterlegte Fingerabdruck kann entsperren.
 - **Darstellung:** eine **Akzentfarbe** wählen. Sie erscheint in der App und auf dem PDF-Bericht.
-- **Datensicherung** (nicht in der Web-App): **„Sicherung erstellen…"** schreibt alle Daten in eine Datei `Zeitexa_Sicherung_JJJJ-MM-TT.zeitexadb`, **„Sicherung wiederherstellen…"** spielt sie zurück. Beim Wiederherstellen wird der gesamte Bestand ersetzt. Sicherungen anderer Programme (etwa der Firmenversion Zeitrax) weist Zeitexa ab.
+- **Datensicherung:** **„Sicherung erstellen…"** schreibt alle Daten in eine Datei `Zeitexa_Sicherung_JJJJ-MM-TT.zeitexadb`, **„Sicherung wiederherstellen…"** spielt sie zurück. Das funktioniert auf **allen Geräten** – auch in der Web-App (dort geht die Datei über das Teilen-Menü hinaus bzw. wird heruntergeladen, z. B. „In Dateien sichern") – und die Datei lässt sich **geräteübergreifend** einspielen, etwa vom alten Handy am neuen oder vom PC am iPhone. Beim Wiederherstellen wird der gesamte Bestand ersetzt. Sicherungen anderer Programme (etwa der Firmenversion Zeitrax) weist Zeitexa ab. Hinweis: Sicherungen aus Zeitexa-Versionen **vor 1.3** lassen sich nur in der Windows- und Android-App einspielen, nicht in der Web-App – bei Bedarf einfach dort eine neue Sicherung erstellen.
 - **Lizenz:** zeigt, für wen die App freigeschaltet ist. **„Lizenzdatei importieren…"** spielt eine neue Datei des Entwicklers ein (z. B. bei einer Namenskorrektur – der neue Name gilt dann sofort überall). **„Lizenzdatei exportieren…"** speichert Ihre Lizenz als Datei, um sie auf einem anderen Gerät zu importieren.
 
 ### 4.3 Reiter „Auswertung"
 
-Zeitraum wählen (von/bis) und Zeitexa zeigt eine Vorschau: eine Zeile je Monat mit Ist, Soll, Überstunden, Urlaub, Krank und Sonderurlaub, dazu ein Balkendiagramm Ist gegen Soll. Über den Export-Knopf lässt sich die Auswertung als Excel- oder PDF-Datei ausgeben – praktisch für den Jahresabschluss oder den Steuerberater.
+Die Auswertung entsteht **automatisch** aus Ihren Einträgen – nichts importieren, nichts anstoßen: Jeder erfasste Monat erscheint hier von selbst als eine Zeile mit Ist, Soll, Überstunden, Urlaub, Sonder- und Zusatzurlaub, Krank, Zeitausgleich und Feiertagen, dazu zwei Diagramme (Überstunden je Monat sowie Ist gegen Soll). Über **„Auswertung exportieren"** lässt sich das Ganze als Excel- und PDF-Datei ausgeben – praktisch für den Jahresabschluss oder den Steuerberater.
 
 ---
 
@@ -174,7 +174,7 @@ Es lässt sich nicht zurücksetzen – es ist verschlüsselt gespeichert. Ohne S
 Melden Sie sich beim Entwickler – er stellt eine korrigierte Lizenzdatei aus. Diese unter Verwaltung → Optionen → **„Lizenzdatei importieren…"** einspielen; der neue Name gilt sofort überall (auch auf den Berichten).
 
 **Kann ich Zeitexa auf mehreren Geräten nutzen?**
-Ja. Am einfachsten unter Verwaltung → Optionen die **Lizenzdatei exportieren** und am neuen Gerät importieren (oder dort denselben Freischaltcode eingeben). Die Geräte gleichen sich aber **nicht** miteinander ab – jedes führt seinen eigenen Bestand. Um komplett umzuziehen, verwenden Sie „Sicherung erstellen" und spielen die Datei am neuen Gerät ein.
+Ja. Am einfachsten unter Verwaltung → Optionen die **Lizenzdatei exportieren** und am neuen Gerät importieren (oder dort denselben Freischaltcode eingeben). Die Geräte gleichen sich aber **nicht** miteinander ab – jedes führt seinen eigenen Bestand. Um komplett umzuziehen (z. B. auf ein neues Handy), verwenden Sie „Sicherung erstellen" und spielen die Datei am neuen Gerät ein – das geht auf allen Geräten, auch in der Web-App am iPhone.
 
 **Stimmen die Zahlen auch rückwirkend, wenn ich meine Sollstunden später ändere?**
 Ja. Zeitexa rechnet immer mit den aktuellen Einstellungen und schreibt die Konten ab dem Stichtag fort.

@@ -6,7 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../data/database.dart';
 import '../logic/berechnung.dart';
-import '../ui/auswertung_view.dart' show MonatsAuswertung;
+import '../logic/auswertung.dart' show MonatsAuswertung;
 
 /// Gesamtauswertung als Excel: eine Zeile pro Mitarbeiter und Monat.
 Uint8List auswertungExcel(

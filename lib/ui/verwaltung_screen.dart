@@ -523,6 +523,7 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
   final _smtpPass = TextEditingController();
   bool _ssl = true;
   bool _autoSend = false;
+  bool _sicherungMitMail = false;
   bool _heuteOeffnet = false;
   bool _appSperre = false;
   bool _biometrie = false;
@@ -567,6 +568,8 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
     _smtpPass.text = await db.getSetting(SettingsKeys.smtpPass) ?? '';
     _ssl = await db.getBoolSetting(SettingsKeys.smtpSsl, fallback: true);
     _autoSend = await db.getBoolSetting(SettingsKeys.autoSendAktiv);
+    _sicherungMitMail =
+        await db.getBoolSetting(SettingsKeys.sicherungMitMail);
     _heuteOeffnet =
         await db.getBoolSetting(SettingsKeys.heuteOeffnetEintragStandard);
     _appSperre = await ref.read(authProvider).appSperreAktiv();
@@ -590,6 +593,8 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
     await db.setSetting(SettingsKeys.smtpPass, _smtpPass.text);
     await db.setBoolSetting(SettingsKeys.smtpSsl, _ssl);
     await db.setBoolSetting(SettingsKeys.autoSendAktiv, _autoSend);
+    await db.setBoolSetting(
+        SettingsKeys.sicherungMitMail, _sicherungMitMail);
     await db.setBoolSetting(
         SettingsKeys.heuteOeffnetEintragStandard, _heuteOeffnet);
     if (mounted) {
@@ -721,7 +726,7 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
     final bytes = await backup.waehleSicherung();
     if (bytes == null || !mounted) return;
     final messenger = ScaffoldMessenger.of(context);
-    if (!istSqliteDatei(bytes)) {
+    if (erkenneSicherungsFormat(bytes) == null) {
       messenger.showSnackBar(const SnackBar(
           content: Text('Das ist keine gültige Zeitexa-Sicherungsdatei.')));
       return;
@@ -850,7 +855,6 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
       return const Center(child: CircularProgressIndicator());
     }
     final smtpMoeglich = ref.read(exportProvider).smtpMoeglich;
-    final backupVerfuegbar = ref.read(backupProvider).verfuegbar;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -933,6 +937,15 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
                   'weitergeben.'),
             ),
           ),
+        SwitchListTile(
+          title: const Text('Sicherung an die Export-Mail anhängen'),
+          subtitle: const Text(
+              'Jede Monats-Mail (auch die automatische) bekommt zusätzlich '
+              'eine komplette Datensicherung als Anhang – so liegt immer '
+              'ein aktueller Stand im Postfach.'),
+          value: _sicherungMitMail,
+          onChanged: (v) => setState(() => _sicherungMitMail = v),
+        ),
         const Divider(height: 32),
         Text('Bedienung', style: Theme.of(context).textTheme.titleMedium),
         SwitchListTile(
@@ -969,33 +982,25 @@ class _OptionenTabState extends ConsumerState<_OptionenTab> {
         const Divider(height: 32),
         Text('Datensicherung', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 4),
-        if (backupVerfuegbar) ...[
-          const Text(
-              'Die Sicherung enthält ALLE Daten dieses Geräts (Einträge, '
-              'Einstellungen, Lizenz) in einer Datei – z.B. um auf einen '
-              'neuen PC umzuziehen oder die Daten zu sichern.'),
-          const SizedBox(height: 12),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            OutlinedButton.icon(
-              onPressed: _backupLaeuft ? null : _sichern,
-              icon: const Icon(Icons.save_alt),
-              label: const Text('Sicherung erstellen…'),
-            ),
-            OutlinedButton.icon(
-              onPressed: _backupLaeuft ? null : _wiederherstellen,
-              icon: const Icon(Icons.settings_backup_restore),
-              label: const Text('Sicherung wiederherstellen…'),
-            ),
-          ]),
-        ] else
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(12),
-              child: Text(
-                  'Im Browser (PWA) ist keine Datensicherung möglich – '
-                  'bitte dafür die Windows- oder Android-App verwenden.'),
-            ),
+        const Text(
+            'Die Sicherung enthält ALLE Daten dieses Geräts (Einträge, '
+            'Einstellungen, Lizenz) in einer Datei – z.B. um auf ein neues '
+            'Gerät umzuziehen oder die Daten zu sichern. Die Datei lässt '
+            'sich auf jedem Gerät einspielen – auch zwischen PC, Handy '
+            'und Browser-App.'),
+        const SizedBox(height: 12),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          OutlinedButton.icon(
+            onPressed: _backupLaeuft ? null : _sichern,
+            icon: const Icon(Icons.save_alt),
+            label: const Text('Sicherung erstellen…'),
           ),
+          OutlinedButton.icon(
+            onPressed: _backupLaeuft ? null : _wiederherstellen,
+            icon: const Icon(Icons.settings_backup_restore),
+            label: const Text('Sicherung wiederherstellen…'),
+          ),
+        ]),
         const Divider(height: 32),
         Text('Lizenz', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 4),
