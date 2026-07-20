@@ -96,7 +96,9 @@ void main() {
     // Teil-Urlaub eintragen → Beginn/Ende/Pause erscheinen.
     await tester.enterText(feld, '6,25');
     await tester.pump();
-    expect(find.textContaining('Beginn'), findsOneWidget);
+    // Der Beginn-Button und der „Jetzt Beginn"-Button enthalten beide
+    // „Beginn".
+    expect(find.textContaining('Beginn'), findsNWidgets(2));
     expect(find.textContaining('Pause'), findsOneWidget);
 
     await tester.runAsync(db.close);

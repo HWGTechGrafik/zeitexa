@@ -260,6 +260,12 @@ class _EintragDialogState extends ConsumerState<_EintragDialog> {
     }
   }
 
+  /// Übernimmt die aktuelle Geräte-Uhrzeit (minutengenau) als Beginn/Ende.
+  void _jetzt(bool istBeginn) {
+    final jetzt = TimeOfDay.now();
+    setState(() => istBeginn ? _beginn = jetzt : _ende = jetzt);
+  }
+
   /// Ort-Eingabe mit Schnellauswahl der zuletzt verwendeten Orte.
   List<Widget> _ortFelder() => [
         TextField(
@@ -306,6 +312,26 @@ class _EintragDialogState extends ConsumerState<_EintragDialog> {
               icon: const Icon(Icons.logout),
               label: Text(_ende == null ? 'Ende' : 'Ende ${uhr(_ende!)}'),
               onPressed: () => _zeitWaehlen(false),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.schedule),
+              label: const Text('Jetzt Beginn'),
+              onPressed: () => _jetzt(true),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.schedule),
+              label: const Text('Jetzt Ende'),
+              onPressed: () => _jetzt(false),
             ),
           ),
         ],
