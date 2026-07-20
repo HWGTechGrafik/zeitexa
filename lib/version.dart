@@ -5,4 +5,4 @@
 ///
 /// WICHTIG: Bei jedem Release zusammen mit `version:` in pubspec.yaml erhöhen.
 /// tools/release/erstelle_paket.ps1 bricht ab, wenn beide nicht übereinstimmen.
-const String kAppVersion = '1.1.0';
+const String kAppVersion = '1.2.0';
