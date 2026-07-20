@@ -110,7 +110,7 @@ Einfach die gewünschte Tageszeile **antippen** – es öffnet sich der Tagesein
 1. Oben die **Tagesart** wählen: **Arbeit, Urlaub, Krank, Feiertag, Zeitausgleich, Sonderurlaub** und – falls Sie das Konto führen – **Zusatzurlaub**. (Feiertage schlägt die App bei österreichischen gesetzlichen Feiertagen automatisch vor.)
 2. Bei **Arbeit**:
    - **Ort** eintragen (z. B. die Baustelle). Zuletzt verwendete Orte erscheinen als Schnellauswahl zum Antippen.
-   - **Beginn** und **Ende** über die Uhr einstellen.
+   - **Beginn** und **Ende** über die Uhr einstellen. Mit **„Jetzt Beginn"** bzw. **„Jetzt Ende"** übernimmt die App die aktuelle Uhrzeit mit einem Tipp – praktisch, wenn man direkt beim Kommen oder Gehen stempelt.
    - **Pause** über die runde Pausen-Uhr einstellen (in 5-Minuten-Schritten).
    - Beginn, Ende und Pause sind mit Ihren Standardzeiten vorbelegt – meist muss man gar nichts ändern. Ist Ihr **Freitag kürzer** und sind eigene Freitagszeiten hinterlegt, verwendet die App am Freitag automatisch diese.
 3. Bei allen anderen Tagesarten kann man über **„bis-Datum wählen"** gleich einen ganzen Zeitraum eintragen (z. B. zwei Wochen Urlaub) – Samstage und Sonntage werden automatisch übersprungen.

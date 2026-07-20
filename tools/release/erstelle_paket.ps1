@@ -10,9 +10,12 @@
 # Aufruf (aus dem Projektordner):
 #   powershell -ExecutionPolicy Bypass -File tools\release\erstelle_paket.ps1
 #   ... -SkipBuild    ueberspringt die Flutter-Builds und packt nur.
+#   ... -NurWindows   laesst die Android-APK komplett weg (kein Build,
+#                     kein Android-Ordner im Lieferpaket).
 
 param(
-    [switch]$SkipBuild
+    [switch]$SkipBuild,
+    [switch]$NurWindows
 )
 
 $ErrorActionPreference = 'Stop'
@@ -56,16 +59,18 @@ if (-not $SkipBuild) {
     & $flutter build windows --release
     if ($LASTEXITCODE -ne 0) { throw 'Windows-Build fehlgeschlagen.' }
 
-    Write-Host 'Baue Android-APK (flutter build apk --release) ...'
-    & $flutter build apk --release
-    if ($LASTEXITCODE -ne 0) { throw 'Android-Build fehlgeschlagen.' }
+    if (-not $NurWindows) {
+        Write-Host 'Baue Android-APK (flutter build apk --release) ...'
+        & $flutter build apk --release
+        if ($LASTEXITCODE -ne 0) { throw 'Android-Build fehlgeschlagen.' }
+    }
 }
 
 # Build-Artefakte pruefen.
 $windowsRelease = "$projekt\build\windows\x64\runner\Release"
 $apk = "$projekt\build\app\outputs\flutter-apk\app-release.apk"
 if (-not (Test-Path "$windowsRelease\zeitexa.exe")) { throw "Windows-Build fehlt: $windowsRelease\zeitexa.exe" }
-if (-not (Test-Path $apk)) { throw "Android-Build fehlt: $apk" }
+if (-not $NurWindows -and -not (Test-Path $apk)) { throw "Android-Build fehlt: $apk" }
 
 # Sicherheitscheck VOR dem Packen: kein privater Schluessel in den Quellen.
 $verdaechtig = Get-ChildItem $windowsRelease -Recurse -File | Where-Object { $_.Name -like 'privater_schluessel*' }
@@ -82,26 +87,28 @@ $appSo = [IO.File]::ReadAllBytes("$windowsRelease\data\app.so")
 if (Test-EnthaeltTestmodus $appSo) {
     throw 'ABBRUCH: Der Windows-Build enthaelt den internen Testmodus (TESTVERSION) - bitte normal neu bauen (ohne --dart-define=ZEITEXA_TESTMODUS).'
 }
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-$apkZip = [IO.Compression.ZipFile]::OpenRead($apk)
-try {
-    foreach ($eintrag in ($apkZip.Entries | Where-Object { $_.FullName -like 'lib/*/libapp.so' })) {
-        $strom = $eintrag.Open()
-        $speicher = New-Object IO.MemoryStream
-        $strom.CopyTo($speicher); $strom.Dispose()
-        if (Test-EnthaeltTestmodus $speicher.ToArray()) {
-            throw 'ABBRUCH: Die Android-APK enthaelt den internen Testmodus (TESTVERSION) - bitte normal neu bauen.'
+if (-not $NurWindows) {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $apkZip = [IO.Compression.ZipFile]::OpenRead($apk)
+    try {
+        foreach ($eintrag in ($apkZip.Entries | Where-Object { $_.FullName -like 'lib/*/libapp.so' })) {
+            $strom = $eintrag.Open()
+            $speicher = New-Object IO.MemoryStream
+            $strom.CopyTo($speicher); $strom.Dispose()
+            if (Test-EnthaeltTestmodus $speicher.ToArray()) {
+                throw 'ABBRUCH: Die Android-APK enthaelt den internen Testmodus (TESTVERSION) - bitte normal neu bauen.'
+            }
+            $speicher.Dispose()
         }
-        $speicher.Dispose()
-    }
-} finally { $apkZip.Dispose() }
+    } finally { $apkZip.Dispose() }
+}
 
 # Lieferordner frisch aufbauen.
 $lieferung = "$projekt\Lieferung an Kunden"
 if (Test-Path $lieferung) { Remove-Item $lieferung -Recurse -Force }
 New-Item -ItemType Directory -Force "$lieferung\Windows Setup" | Out-Null
 New-Item -ItemType Directory -Force "$lieferung\Windows ZIP" | Out-Null
-New-Item -ItemType Directory -Force "$lieferung\Android" | Out-Null
+if (-not $NurWindows) { New-Item -ItemType Directory -Force "$lieferung\Android" | Out-Null }
 
 # ---- 1. Windows-Installer (Setup.exe) ----
 Write-Host 'Erzeuge Windows-Installer (Inno Setup) ...'
@@ -149,8 +156,11 @@ Compress-Archive -Path "$zipStaging\*" -DestinationPath $zip
 Remove-Item $zipStaging -Recurse -Force
 
 # ---- 3. Android + Anleitung ----
-Write-Host 'Kopiere Android-APK und Anleitung ...'
-Copy-Item $apk "$lieferung\Android\Zeitexa_v$version.apk"
+if (-not $NurWindows) {
+    Write-Host 'Kopiere Android-APK ...'
+    Copy-Item $apk "$lieferung\Android\Zeitexa_v$version.apk"
+}
+Write-Host 'Kopiere Anleitung ...'
 Copy-Item "$projekt\ANLEITUNG.docx" "$lieferung\ANLEITUNG.docx"
 
 # Sicherheitscheck NACH dem Packen ueber den ganzen Lieferordner.
