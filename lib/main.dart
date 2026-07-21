@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'data/database.dart';
@@ -7,6 +10,7 @@ import 'export/export_service.dart';
 import 'logic/auth.dart';
 import 'logic/backup_service.dart';
 import 'logic/biometrie_service.dart';
+import 'logic/fehlerprotokoll.dart';
 import 'logic/lizenz_service.dart';
 import 'ui/lizenz_screen.dart';
 import 'ui/monats_screen.dart';
@@ -56,6 +60,32 @@ final entsperrtProvider =
 final brandingProvider =
     StreamProvider<Branding>((ref) => ref.watch(dbProvider).watchBranding());
 
+/// Datenströme der Monatsansicht als Provider – damit sie NICHT bei jedem
+/// `build()` neu erzeugt werden (das führte zu Hängern/weißem Bildschirm beim
+/// schnellen Hin- und Herschalten). Siehe lib/ui/monats_screen.dart.
+final monatEintraegeProvider = StreamProvider.family<List<TimeEntry>,
+    ({int userId, int jahr, int monat})>(
+  (ref, p) => ref.watch(dbProvider).watchMonth(p.userId, p.jahr, p.monat),
+);
+
+final alleEintraegeProvider = StreamProvider.family<List<TimeEntry>, int>(
+  (ref, userId) => ref.watch(dbProvider).watchAllEntries(userId),
+);
+
+final ortNamenProvider = StreamProvider<Map<int, String>>((ref) {
+  final db = ref.watch(dbProvider);
+  return db.select(db.places).watch().map(
+      (orte) => {for (final o in orte) o.id: o.name});
+});
+
+/// Anzahl der Stempel-Blöcke je Tageskopf (nur Tage mit ≥2 Blöcken), für die
+/// Anzeige „· N Blöcke" in der Monatsliste.
+final blockAnzahlProvider = StreamProvider.family<Map<int, int>,
+    ({int userId, int jahr, int monat})>(
+  (ref, p) =>
+      ref.watch(dbProvider).watchBlockAnzahlFuerMonat(p.userId, p.jahr, p.monat),
+);
+
 /// Interner Testmodus - NUR fuer Builds mit
 /// `--dart-define=ZEITEXA_TESTMODUS=true`: ueberspringt Freischaltung und
 /// Ersteinrichtung (Test-Profil "Test-Benutzer") und zeigt ein rotes
@@ -97,8 +127,14 @@ Future<void> _testModusVorbereiten(Ref ref) async {
 }
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: ZeitexaApp()));
+  runZonedGuarded(() {
+    WidgetsFlutterBinding.ensureInitialized();
+    installiereFehlerprotokoll();
+    runApp(const ProviderScope(child: ZeitexaApp()));
+  }, (fehler, stack) {
+    // Fehler aus asynchronen Zonen ebenfalls still protokollieren.
+    debugPrint('Unbehandelter Fehler: $fehler');
+  });
 }
 
 class ZeitexaApp extends ConsumerWidget {
@@ -111,6 +147,14 @@ class ZeitexaApp extends ConsumerWidget {
     return MaterialApp(
       title: 'Zeitexa',
       debugShowCheckedModeBanner: false,
+      // Deutsche Oberflächentexte in Kalender, Zeit- und Datumswählern.
+      locale: const Locale('de'),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('de'), Locale('en')],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: akzent),
         useMaterial3: true,

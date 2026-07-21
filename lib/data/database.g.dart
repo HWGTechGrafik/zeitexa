@@ -589,6 +589,140 @@ class $UserSettingsTable extends UserSettings
     requiredDuringInsert: false,
     defaultValue: const Constant(5.0),
   );
+  static const VerificationMeta _sollStundenMoMeta = const VerificationMeta(
+    'sollStundenMo',
+  );
+  @override
+  late final GeneratedColumn<double> sollStundenMo = GeneratedColumn<double>(
+    'soll_stunden_mo',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(8.0),
+  );
+  static const VerificationMeta _sollStundenDiMeta = const VerificationMeta(
+    'sollStundenDi',
+  );
+  @override
+  late final GeneratedColumn<double> sollStundenDi = GeneratedColumn<double>(
+    'soll_stunden_di',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(8.0),
+  );
+  static const VerificationMeta _sollStundenMiMeta = const VerificationMeta(
+    'sollStundenMi',
+  );
+  @override
+  late final GeneratedColumn<double> sollStundenMi = GeneratedColumn<double>(
+    'soll_stunden_mi',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(8.0),
+  );
+  static const VerificationMeta _sollStundenDoMeta = const VerificationMeta(
+    'sollStundenDo',
+  );
+  @override
+  late final GeneratedColumn<double> sollStundenDo = GeneratedColumn<double>(
+    'soll_stunden_do',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(8.0),
+  );
+  static const VerificationMeta _sollStundenFrTagMeta = const VerificationMeta(
+    'sollStundenFrTag',
+  );
+  @override
+  late final GeneratedColumn<double> sollStundenFrTag = GeneratedColumn<double>(
+    'soll_stunden_fr_tag',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(8.0),
+  );
+  static const VerificationMeta _sollStundenSaMeta = const VerificationMeta(
+    'sollStundenSa',
+  );
+  @override
+  late final GeneratedColumn<double> sollStundenSa = GeneratedColumn<double>(
+    'soll_stunden_sa',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _sollStundenSoMeta = const VerificationMeta(
+    'sollStundenSo',
+  );
+  @override
+  late final GeneratedColumn<double> sollStundenSo = GeneratedColumn<double>(
+    'soll_stunden_so',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _standardZeitenProTagMeta =
+      const VerificationMeta('standardZeitenProTag');
+  @override
+  late final GeneratedColumn<String> standardZeitenProTag =
+      GeneratedColumn<String>(
+        'standard_zeiten_pro_tag',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _pausenregelAktivMeta = const VerificationMeta(
+    'pausenregelAktiv',
+  );
+  @override
+  late final GeneratedColumn<bool> pausenregelAktiv = GeneratedColumn<bool>(
+    'pausenregel_aktiv',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("pausenregel_aktiv" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _pausenSchwelleMinMeta = const VerificationMeta(
+    'pausenSchwelleMin',
+  );
+  @override
+  late final GeneratedColumn<int> pausenSchwelleMin = GeneratedColumn<int>(
+    'pausen_schwelle_min',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(12 * 60),
+  );
+  static const VerificationMeta _pausenMindestMinMeta = const VerificationMeta(
+    'pausenMindestMin',
+  );
+  @override
+  late final GeneratedColumn<int> pausenMindestMin = GeneratedColumn<int>(
+    'pausen_mindest_min',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(60),
+  );
   static const VerificationMeta _standardBeginnMinMeta = const VerificationMeta(
     'standardBeginnMin',
   );
@@ -752,6 +886,17 @@ class $UserSettingsTable extends UserSettings
     sollStundenTag,
     sollStundenMoDo,
     sollStundenFr,
+    sollStundenMo,
+    sollStundenDi,
+    sollStundenMi,
+    sollStundenDo,
+    sollStundenFrTag,
+    sollStundenSa,
+    sollStundenSo,
+    standardZeitenProTag,
+    pausenregelAktiv,
+    pausenSchwelleMin,
+    pausenMindestMin,
     standardBeginnMin,
     standardEndeMin,
     standardPauseMin,
@@ -808,6 +953,105 @@ class $UserSettingsTable extends UserSettings
         sollStundenFr.isAcceptableOrUnknown(
           data['soll_stunden_fr']!,
           _sollStundenFrMeta,
+        ),
+      );
+    }
+    if (data.containsKey('soll_stunden_mo')) {
+      context.handle(
+        _sollStundenMoMeta,
+        sollStundenMo.isAcceptableOrUnknown(
+          data['soll_stunden_mo']!,
+          _sollStundenMoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('soll_stunden_di')) {
+      context.handle(
+        _sollStundenDiMeta,
+        sollStundenDi.isAcceptableOrUnknown(
+          data['soll_stunden_di']!,
+          _sollStundenDiMeta,
+        ),
+      );
+    }
+    if (data.containsKey('soll_stunden_mi')) {
+      context.handle(
+        _sollStundenMiMeta,
+        sollStundenMi.isAcceptableOrUnknown(
+          data['soll_stunden_mi']!,
+          _sollStundenMiMeta,
+        ),
+      );
+    }
+    if (data.containsKey('soll_stunden_do')) {
+      context.handle(
+        _sollStundenDoMeta,
+        sollStundenDo.isAcceptableOrUnknown(
+          data['soll_stunden_do']!,
+          _sollStundenDoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('soll_stunden_fr_tag')) {
+      context.handle(
+        _sollStundenFrTagMeta,
+        sollStundenFrTag.isAcceptableOrUnknown(
+          data['soll_stunden_fr_tag']!,
+          _sollStundenFrTagMeta,
+        ),
+      );
+    }
+    if (data.containsKey('soll_stunden_sa')) {
+      context.handle(
+        _sollStundenSaMeta,
+        sollStundenSa.isAcceptableOrUnknown(
+          data['soll_stunden_sa']!,
+          _sollStundenSaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('soll_stunden_so')) {
+      context.handle(
+        _sollStundenSoMeta,
+        sollStundenSo.isAcceptableOrUnknown(
+          data['soll_stunden_so']!,
+          _sollStundenSoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('standard_zeiten_pro_tag')) {
+      context.handle(
+        _standardZeitenProTagMeta,
+        standardZeitenProTag.isAcceptableOrUnknown(
+          data['standard_zeiten_pro_tag']!,
+          _standardZeitenProTagMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pausenregel_aktiv')) {
+      context.handle(
+        _pausenregelAktivMeta,
+        pausenregelAktiv.isAcceptableOrUnknown(
+          data['pausenregel_aktiv']!,
+          _pausenregelAktivMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pausen_schwelle_min')) {
+      context.handle(
+        _pausenSchwelleMinMeta,
+        pausenSchwelleMin.isAcceptableOrUnknown(
+          data['pausen_schwelle_min']!,
+          _pausenSchwelleMinMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pausen_mindest_min')) {
+      context.handle(
+        _pausenMindestMinMeta,
+        pausenMindestMin.isAcceptableOrUnknown(
+          data['pausen_mindest_min']!,
+          _pausenMindestMinMeta,
         ),
       );
     }
@@ -959,6 +1203,50 @@ class $UserSettingsTable extends UserSettings
         DriftSqlType.double,
         data['${effectivePrefix}soll_stunden_fr'],
       )!,
+      sollStundenMo: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}soll_stunden_mo'],
+      )!,
+      sollStundenDi: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}soll_stunden_di'],
+      )!,
+      sollStundenMi: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}soll_stunden_mi'],
+      )!,
+      sollStundenDo: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}soll_stunden_do'],
+      )!,
+      sollStundenFrTag: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}soll_stunden_fr_tag'],
+      )!,
+      sollStundenSa: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}soll_stunden_sa'],
+      )!,
+      sollStundenSo: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}soll_stunden_so'],
+      )!,
+      standardZeitenProTag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}standard_zeiten_pro_tag'],
+      ),
+      pausenregelAktiv: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pausenregel_aktiv'],
+      )!,
+      pausenSchwelleMin: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pausen_schwelle_min'],
+      )!,
+      pausenMindestMin: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pausen_mindest_min'],
+      )!,
       standardBeginnMin: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}standard_beginn_min'],
@@ -1030,6 +1318,32 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
   final double sollStundenMoDo;
   final double sollStundenFr;
 
+  /// Sollstunden je Wochentag – nur relevant im Modus
+  /// [SollModus.proWochentag]. Standard: Mo–Fr 8 h, Sa/So 0 h. So kann z.B.
+  /// eine 25-Stunden-Woche mit freiem Mittwoch tagesgenau hinterlegt werden.
+  final double sollStundenMo;
+  final double sollStundenDi;
+  final double sollStundenMi;
+  final double sollStundenDo;
+  final double sollStundenFrTag;
+  final double sollStundenSa;
+  final double sollStundenSo;
+
+  /// Standardzeiten je Wochentag als JSON (Vorbelegung neuer Einträge im
+  /// Modus [SollModus.proWochentag]). Aufbau: `{"1":{"b":420,"e":960,"p":30},
+  /// …}` mit Wochentag 1=Mo … 7=So und Minuten seit Mitternacht. Fehlt ein
+  /// Wochentag oder ein Feld, gilt der allgemeine Standard. `null` = für alle
+  /// Tage der allgemeine Standard (Abwärtskompatibilität).
+  final String? standardZeitenProTag;
+
+  /// Automatische Pausenregel: Ab [pausenSchwelleMin] Minuten Anwesenheit
+  /// muss die Pause mindestens [pausenMindestMin] Minuten betragen; eine
+  /// zu kurze (oder aus Blocklücken errechnete) Pause wird nur AUFGEFÜLLT,
+  /// nie doppelt abgezogen. Standard aus, Vorschlagswerte 12 h / 60 min.
+  final bool pausenregelAktiv;
+  final int pausenSchwelleMin;
+  final int pausenMindestMin;
+
   /// Vorbelegung für neue Arbeits-Einträge (Minuten seit Mitternacht bzw.
   /// Pausendauer in Minuten). Vom Chef bei der Anlage gesetzt, danach vom
   /// Mitarbeiter selbst in seinen Einstellungen änderbar.
@@ -1071,6 +1385,17 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     required this.sollStundenTag,
     required this.sollStundenMoDo,
     required this.sollStundenFr,
+    required this.sollStundenMo,
+    required this.sollStundenDi,
+    required this.sollStundenMi,
+    required this.sollStundenDo,
+    required this.sollStundenFrTag,
+    required this.sollStundenSa,
+    required this.sollStundenSo,
+    this.standardZeitenProTag,
+    required this.pausenregelAktiv,
+    required this.pausenSchwelleMin,
+    required this.pausenMindestMin,
     required this.standardBeginnMin,
     required this.standardEndeMin,
     required this.standardPauseMin,
@@ -1097,6 +1422,19 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     map['soll_stunden_tag'] = Variable<double>(sollStundenTag);
     map['soll_stunden_mo_do'] = Variable<double>(sollStundenMoDo);
     map['soll_stunden_fr'] = Variable<double>(sollStundenFr);
+    map['soll_stunden_mo'] = Variable<double>(sollStundenMo);
+    map['soll_stunden_di'] = Variable<double>(sollStundenDi);
+    map['soll_stunden_mi'] = Variable<double>(sollStundenMi);
+    map['soll_stunden_do'] = Variable<double>(sollStundenDo);
+    map['soll_stunden_fr_tag'] = Variable<double>(sollStundenFrTag);
+    map['soll_stunden_sa'] = Variable<double>(sollStundenSa);
+    map['soll_stunden_so'] = Variable<double>(sollStundenSo);
+    if (!nullToAbsent || standardZeitenProTag != null) {
+      map['standard_zeiten_pro_tag'] = Variable<String>(standardZeitenProTag);
+    }
+    map['pausenregel_aktiv'] = Variable<bool>(pausenregelAktiv);
+    map['pausen_schwelle_min'] = Variable<int>(pausenSchwelleMin);
+    map['pausen_mindest_min'] = Variable<int>(pausenMindestMin);
     map['standard_beginn_min'] = Variable<int>(standardBeginnMin);
     map['standard_ende_min'] = Variable<int>(standardEndeMin);
     map['standard_pause_min'] = Variable<int>(standardPauseMin);
@@ -1134,6 +1472,19 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       sollStundenTag: Value(sollStundenTag),
       sollStundenMoDo: Value(sollStundenMoDo),
       sollStundenFr: Value(sollStundenFr),
+      sollStundenMo: Value(sollStundenMo),
+      sollStundenDi: Value(sollStundenDi),
+      sollStundenMi: Value(sollStundenMi),
+      sollStundenDo: Value(sollStundenDo),
+      sollStundenFrTag: Value(sollStundenFrTag),
+      sollStundenSa: Value(sollStundenSa),
+      sollStundenSo: Value(sollStundenSo),
+      standardZeitenProTag: standardZeitenProTag == null && nullToAbsent
+          ? const Value.absent()
+          : Value(standardZeitenProTag),
+      pausenregelAktiv: Value(pausenregelAktiv),
+      pausenSchwelleMin: Value(pausenSchwelleMin),
+      pausenMindestMin: Value(pausenMindestMin),
       standardBeginnMin: Value(standardBeginnMin),
       standardEndeMin: Value(standardEndeMin),
       standardPauseMin: Value(standardPauseMin),
@@ -1171,6 +1522,19 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       sollStundenTag: serializer.fromJson<double>(json['sollStundenTag']),
       sollStundenMoDo: serializer.fromJson<double>(json['sollStundenMoDo']),
       sollStundenFr: serializer.fromJson<double>(json['sollStundenFr']),
+      sollStundenMo: serializer.fromJson<double>(json['sollStundenMo']),
+      sollStundenDi: serializer.fromJson<double>(json['sollStundenDi']),
+      sollStundenMi: serializer.fromJson<double>(json['sollStundenMi']),
+      sollStundenDo: serializer.fromJson<double>(json['sollStundenDo']),
+      sollStundenFrTag: serializer.fromJson<double>(json['sollStundenFrTag']),
+      sollStundenSa: serializer.fromJson<double>(json['sollStundenSa']),
+      sollStundenSo: serializer.fromJson<double>(json['sollStundenSo']),
+      standardZeitenProTag: serializer.fromJson<String?>(
+        json['standardZeitenProTag'],
+      ),
+      pausenregelAktiv: serializer.fromJson<bool>(json['pausenregelAktiv']),
+      pausenSchwelleMin: serializer.fromJson<int>(json['pausenSchwelleMin']),
+      pausenMindestMin: serializer.fromJson<int>(json['pausenMindestMin']),
       standardBeginnMin: serializer.fromJson<int>(json['standardBeginnMin']),
       standardEndeMin: serializer.fromJson<int>(json['standardEndeMin']),
       standardPauseMin: serializer.fromJson<int>(json['standardPauseMin']),
@@ -1209,6 +1573,17 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       'sollStundenTag': serializer.toJson<double>(sollStundenTag),
       'sollStundenMoDo': serializer.toJson<double>(sollStundenMoDo),
       'sollStundenFr': serializer.toJson<double>(sollStundenFr),
+      'sollStundenMo': serializer.toJson<double>(sollStundenMo),
+      'sollStundenDi': serializer.toJson<double>(sollStundenDi),
+      'sollStundenMi': serializer.toJson<double>(sollStundenMi),
+      'sollStundenDo': serializer.toJson<double>(sollStundenDo),
+      'sollStundenFrTag': serializer.toJson<double>(sollStundenFrTag),
+      'sollStundenSa': serializer.toJson<double>(sollStundenSa),
+      'sollStundenSo': serializer.toJson<double>(sollStundenSo),
+      'standardZeitenProTag': serializer.toJson<String?>(standardZeitenProTag),
+      'pausenregelAktiv': serializer.toJson<bool>(pausenregelAktiv),
+      'pausenSchwelleMin': serializer.toJson<int>(pausenSchwelleMin),
+      'pausenMindestMin': serializer.toJson<int>(pausenMindestMin),
       'standardBeginnMin': serializer.toJson<int>(standardBeginnMin),
       'standardEndeMin': serializer.toJson<int>(standardEndeMin),
       'standardPauseMin': serializer.toJson<int>(standardPauseMin),
@@ -1241,6 +1616,17 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     double? sollStundenTag,
     double? sollStundenMoDo,
     double? sollStundenFr,
+    double? sollStundenMo,
+    double? sollStundenDi,
+    double? sollStundenMi,
+    double? sollStundenDo,
+    double? sollStundenFrTag,
+    double? sollStundenSa,
+    double? sollStundenSo,
+    Value<String?> standardZeitenProTag = const Value.absent(),
+    bool? pausenregelAktiv,
+    int? pausenSchwelleMin,
+    int? pausenMindestMin,
     int? standardBeginnMin,
     int? standardEndeMin,
     int? standardPauseMin,
@@ -1260,6 +1646,19 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     sollStundenTag: sollStundenTag ?? this.sollStundenTag,
     sollStundenMoDo: sollStundenMoDo ?? this.sollStundenMoDo,
     sollStundenFr: sollStundenFr ?? this.sollStundenFr,
+    sollStundenMo: sollStundenMo ?? this.sollStundenMo,
+    sollStundenDi: sollStundenDi ?? this.sollStundenDi,
+    sollStundenMi: sollStundenMi ?? this.sollStundenMi,
+    sollStundenDo: sollStundenDo ?? this.sollStundenDo,
+    sollStundenFrTag: sollStundenFrTag ?? this.sollStundenFrTag,
+    sollStundenSa: sollStundenSa ?? this.sollStundenSa,
+    sollStundenSo: sollStundenSo ?? this.sollStundenSo,
+    standardZeitenProTag: standardZeitenProTag.present
+        ? standardZeitenProTag.value
+        : this.standardZeitenProTag,
+    pausenregelAktiv: pausenregelAktiv ?? this.pausenregelAktiv,
+    pausenSchwelleMin: pausenSchwelleMin ?? this.pausenSchwelleMin,
+    pausenMindestMin: pausenMindestMin ?? this.pausenMindestMin,
     standardBeginnMin: standardBeginnMin ?? this.standardBeginnMin,
     standardEndeMin: standardEndeMin ?? this.standardEndeMin,
     standardPauseMin: standardPauseMin ?? this.standardPauseMin,
@@ -1299,6 +1698,39 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       sollStundenFr: data.sollStundenFr.present
           ? data.sollStundenFr.value
           : this.sollStundenFr,
+      sollStundenMo: data.sollStundenMo.present
+          ? data.sollStundenMo.value
+          : this.sollStundenMo,
+      sollStundenDi: data.sollStundenDi.present
+          ? data.sollStundenDi.value
+          : this.sollStundenDi,
+      sollStundenMi: data.sollStundenMi.present
+          ? data.sollStundenMi.value
+          : this.sollStundenMi,
+      sollStundenDo: data.sollStundenDo.present
+          ? data.sollStundenDo.value
+          : this.sollStundenDo,
+      sollStundenFrTag: data.sollStundenFrTag.present
+          ? data.sollStundenFrTag.value
+          : this.sollStundenFrTag,
+      sollStundenSa: data.sollStundenSa.present
+          ? data.sollStundenSa.value
+          : this.sollStundenSa,
+      sollStundenSo: data.sollStundenSo.present
+          ? data.sollStundenSo.value
+          : this.sollStundenSo,
+      standardZeitenProTag: data.standardZeitenProTag.present
+          ? data.standardZeitenProTag.value
+          : this.standardZeitenProTag,
+      pausenregelAktiv: data.pausenregelAktiv.present
+          ? data.pausenregelAktiv.value
+          : this.pausenregelAktiv,
+      pausenSchwelleMin: data.pausenSchwelleMin.present
+          ? data.pausenSchwelleMin.value
+          : this.pausenSchwelleMin,
+      pausenMindestMin: data.pausenMindestMin.present
+          ? data.pausenMindestMin.value
+          : this.pausenMindestMin,
       standardBeginnMin: data.standardBeginnMin.present
           ? data.standardBeginnMin.value
           : this.standardBeginnMin,
@@ -1349,6 +1781,17 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           ..write('sollStundenTag: $sollStundenTag, ')
           ..write('sollStundenMoDo: $sollStundenMoDo, ')
           ..write('sollStundenFr: $sollStundenFr, ')
+          ..write('sollStundenMo: $sollStundenMo, ')
+          ..write('sollStundenDi: $sollStundenDi, ')
+          ..write('sollStundenMi: $sollStundenMi, ')
+          ..write('sollStundenDo: $sollStundenDo, ')
+          ..write('sollStundenFrTag: $sollStundenFrTag, ')
+          ..write('sollStundenSa: $sollStundenSa, ')
+          ..write('sollStundenSo: $sollStundenSo, ')
+          ..write('standardZeitenProTag: $standardZeitenProTag, ')
+          ..write('pausenregelAktiv: $pausenregelAktiv, ')
+          ..write('pausenSchwelleMin: $pausenSchwelleMin, ')
+          ..write('pausenMindestMin: $pausenMindestMin, ')
           ..write('standardBeginnMin: $standardBeginnMin, ')
           ..write('standardEndeMin: $standardEndeMin, ')
           ..write('standardPauseMin: $standardPauseMin, ')
@@ -1369,12 +1812,23 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     userId,
     sollModus,
     sollStundenTag,
     sollStundenMoDo,
     sollStundenFr,
+    sollStundenMo,
+    sollStundenDi,
+    sollStundenMi,
+    sollStundenDo,
+    sollStundenFrTag,
+    sollStundenSa,
+    sollStundenSo,
+    standardZeitenProTag,
+    pausenregelAktiv,
+    pausenSchwelleMin,
+    pausenMindestMin,
     standardBeginnMin,
     standardEndeMin,
     standardPauseMin,
@@ -1388,7 +1842,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     anfangsstandUrlaubFrTage,
     firmenurlaubAktiv,
     anfangsstandFirmenurlaubTage,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1398,6 +1852,17 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           other.sollStundenTag == this.sollStundenTag &&
           other.sollStundenMoDo == this.sollStundenMoDo &&
           other.sollStundenFr == this.sollStundenFr &&
+          other.sollStundenMo == this.sollStundenMo &&
+          other.sollStundenDi == this.sollStundenDi &&
+          other.sollStundenMi == this.sollStundenMi &&
+          other.sollStundenDo == this.sollStundenDo &&
+          other.sollStundenFrTag == this.sollStundenFrTag &&
+          other.sollStundenSa == this.sollStundenSa &&
+          other.sollStundenSo == this.sollStundenSo &&
+          other.standardZeitenProTag == this.standardZeitenProTag &&
+          other.pausenregelAktiv == this.pausenregelAktiv &&
+          other.pausenSchwelleMin == this.pausenSchwelleMin &&
+          other.pausenMindestMin == this.pausenMindestMin &&
           other.standardBeginnMin == this.standardBeginnMin &&
           other.standardEndeMin == this.standardEndeMin &&
           other.standardPauseMin == this.standardPauseMin &&
@@ -1421,6 +1886,17 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
   final Value<double> sollStundenTag;
   final Value<double> sollStundenMoDo;
   final Value<double> sollStundenFr;
+  final Value<double> sollStundenMo;
+  final Value<double> sollStundenDi;
+  final Value<double> sollStundenMi;
+  final Value<double> sollStundenDo;
+  final Value<double> sollStundenFrTag;
+  final Value<double> sollStundenSa;
+  final Value<double> sollStundenSo;
+  final Value<String?> standardZeitenProTag;
+  final Value<bool> pausenregelAktiv;
+  final Value<int> pausenSchwelleMin;
+  final Value<int> pausenMindestMin;
   final Value<int> standardBeginnMin;
   final Value<int> standardEndeMin;
   final Value<int> standardPauseMin;
@@ -1440,6 +1916,17 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     this.sollStundenTag = const Value.absent(),
     this.sollStundenMoDo = const Value.absent(),
     this.sollStundenFr = const Value.absent(),
+    this.sollStundenMo = const Value.absent(),
+    this.sollStundenDi = const Value.absent(),
+    this.sollStundenMi = const Value.absent(),
+    this.sollStundenDo = const Value.absent(),
+    this.sollStundenFrTag = const Value.absent(),
+    this.sollStundenSa = const Value.absent(),
+    this.sollStundenSo = const Value.absent(),
+    this.standardZeitenProTag = const Value.absent(),
+    this.pausenregelAktiv = const Value.absent(),
+    this.pausenSchwelleMin = const Value.absent(),
+    this.pausenMindestMin = const Value.absent(),
     this.standardBeginnMin = const Value.absent(),
     this.standardEndeMin = const Value.absent(),
     this.standardPauseMin = const Value.absent(),
@@ -1460,6 +1947,17 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     this.sollStundenTag = const Value.absent(),
     this.sollStundenMoDo = const Value.absent(),
     this.sollStundenFr = const Value.absent(),
+    this.sollStundenMo = const Value.absent(),
+    this.sollStundenDi = const Value.absent(),
+    this.sollStundenMi = const Value.absent(),
+    this.sollStundenDo = const Value.absent(),
+    this.sollStundenFrTag = const Value.absent(),
+    this.sollStundenSa = const Value.absent(),
+    this.sollStundenSo = const Value.absent(),
+    this.standardZeitenProTag = const Value.absent(),
+    this.pausenregelAktiv = const Value.absent(),
+    this.pausenSchwelleMin = const Value.absent(),
+    this.pausenMindestMin = const Value.absent(),
     this.standardBeginnMin = const Value.absent(),
     this.standardEndeMin = const Value.absent(),
     this.standardPauseMin = const Value.absent(),
@@ -1480,6 +1978,17 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     Expression<double>? sollStundenTag,
     Expression<double>? sollStundenMoDo,
     Expression<double>? sollStundenFr,
+    Expression<double>? sollStundenMo,
+    Expression<double>? sollStundenDi,
+    Expression<double>? sollStundenMi,
+    Expression<double>? sollStundenDo,
+    Expression<double>? sollStundenFrTag,
+    Expression<double>? sollStundenSa,
+    Expression<double>? sollStundenSo,
+    Expression<String>? standardZeitenProTag,
+    Expression<bool>? pausenregelAktiv,
+    Expression<int>? pausenSchwelleMin,
+    Expression<int>? pausenMindestMin,
     Expression<int>? standardBeginnMin,
     Expression<int>? standardEndeMin,
     Expression<int>? standardPauseMin,
@@ -1500,6 +2009,18 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
       if (sollStundenTag != null) 'soll_stunden_tag': sollStundenTag,
       if (sollStundenMoDo != null) 'soll_stunden_mo_do': sollStundenMoDo,
       if (sollStundenFr != null) 'soll_stunden_fr': sollStundenFr,
+      if (sollStundenMo != null) 'soll_stunden_mo': sollStundenMo,
+      if (sollStundenDi != null) 'soll_stunden_di': sollStundenDi,
+      if (sollStundenMi != null) 'soll_stunden_mi': sollStundenMi,
+      if (sollStundenDo != null) 'soll_stunden_do': sollStundenDo,
+      if (sollStundenFrTag != null) 'soll_stunden_fr_tag': sollStundenFrTag,
+      if (sollStundenSa != null) 'soll_stunden_sa': sollStundenSa,
+      if (sollStundenSo != null) 'soll_stunden_so': sollStundenSo,
+      if (standardZeitenProTag != null)
+        'standard_zeiten_pro_tag': standardZeitenProTag,
+      if (pausenregelAktiv != null) 'pausenregel_aktiv': pausenregelAktiv,
+      if (pausenSchwelleMin != null) 'pausen_schwelle_min': pausenSchwelleMin,
+      if (pausenMindestMin != null) 'pausen_mindest_min': pausenMindestMin,
       if (standardBeginnMin != null) 'standard_beginn_min': standardBeginnMin,
       if (standardEndeMin != null) 'standard_ende_min': standardEndeMin,
       if (standardPauseMin != null) 'standard_pause_min': standardPauseMin,
@@ -1529,6 +2050,17 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     Value<double>? sollStundenTag,
     Value<double>? sollStundenMoDo,
     Value<double>? sollStundenFr,
+    Value<double>? sollStundenMo,
+    Value<double>? sollStundenDi,
+    Value<double>? sollStundenMi,
+    Value<double>? sollStundenDo,
+    Value<double>? sollStundenFrTag,
+    Value<double>? sollStundenSa,
+    Value<double>? sollStundenSo,
+    Value<String?>? standardZeitenProTag,
+    Value<bool>? pausenregelAktiv,
+    Value<int>? pausenSchwelleMin,
+    Value<int>? pausenMindestMin,
     Value<int>? standardBeginnMin,
     Value<int>? standardEndeMin,
     Value<int>? standardPauseMin,
@@ -1549,6 +2081,17 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
       sollStundenTag: sollStundenTag ?? this.sollStundenTag,
       sollStundenMoDo: sollStundenMoDo ?? this.sollStundenMoDo,
       sollStundenFr: sollStundenFr ?? this.sollStundenFr,
+      sollStundenMo: sollStundenMo ?? this.sollStundenMo,
+      sollStundenDi: sollStundenDi ?? this.sollStundenDi,
+      sollStundenMi: sollStundenMi ?? this.sollStundenMi,
+      sollStundenDo: sollStundenDo ?? this.sollStundenDo,
+      sollStundenFrTag: sollStundenFrTag ?? this.sollStundenFrTag,
+      sollStundenSa: sollStundenSa ?? this.sollStundenSa,
+      sollStundenSo: sollStundenSo ?? this.sollStundenSo,
+      standardZeitenProTag: standardZeitenProTag ?? this.standardZeitenProTag,
+      pausenregelAktiv: pausenregelAktiv ?? this.pausenregelAktiv,
+      pausenSchwelleMin: pausenSchwelleMin ?? this.pausenSchwelleMin,
+      pausenMindestMin: pausenMindestMin ?? this.pausenMindestMin,
       standardBeginnMin: standardBeginnMin ?? this.standardBeginnMin,
       standardEndeMin: standardEndeMin ?? this.standardEndeMin,
       standardPauseMin: standardPauseMin ?? this.standardPauseMin,
@@ -1588,6 +2131,41 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     }
     if (sollStundenFr.present) {
       map['soll_stunden_fr'] = Variable<double>(sollStundenFr.value);
+    }
+    if (sollStundenMo.present) {
+      map['soll_stunden_mo'] = Variable<double>(sollStundenMo.value);
+    }
+    if (sollStundenDi.present) {
+      map['soll_stunden_di'] = Variable<double>(sollStundenDi.value);
+    }
+    if (sollStundenMi.present) {
+      map['soll_stunden_mi'] = Variable<double>(sollStundenMi.value);
+    }
+    if (sollStundenDo.present) {
+      map['soll_stunden_do'] = Variable<double>(sollStundenDo.value);
+    }
+    if (sollStundenFrTag.present) {
+      map['soll_stunden_fr_tag'] = Variable<double>(sollStundenFrTag.value);
+    }
+    if (sollStundenSa.present) {
+      map['soll_stunden_sa'] = Variable<double>(sollStundenSa.value);
+    }
+    if (sollStundenSo.present) {
+      map['soll_stunden_so'] = Variable<double>(sollStundenSo.value);
+    }
+    if (standardZeitenProTag.present) {
+      map['standard_zeiten_pro_tag'] = Variable<String>(
+        standardZeitenProTag.value,
+      );
+    }
+    if (pausenregelAktiv.present) {
+      map['pausenregel_aktiv'] = Variable<bool>(pausenregelAktiv.value);
+    }
+    if (pausenSchwelleMin.present) {
+      map['pausen_schwelle_min'] = Variable<int>(pausenSchwelleMin.value);
+    }
+    if (pausenMindestMin.present) {
+      map['pausen_mindest_min'] = Variable<int>(pausenMindestMin.value);
     }
     if (standardBeginnMin.present) {
       map['standard_beginn_min'] = Variable<int>(standardBeginnMin.value);
@@ -1649,6 +2227,17 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
           ..write('sollStundenTag: $sollStundenTag, ')
           ..write('sollStundenMoDo: $sollStundenMoDo, ')
           ..write('sollStundenFr: $sollStundenFr, ')
+          ..write('sollStundenMo: $sollStundenMo, ')
+          ..write('sollStundenDi: $sollStundenDi, ')
+          ..write('sollStundenMi: $sollStundenMi, ')
+          ..write('sollStundenDo: $sollStundenDo, ')
+          ..write('sollStundenFrTag: $sollStundenFrTag, ')
+          ..write('sollStundenSa: $sollStundenSa, ')
+          ..write('sollStundenSo: $sollStundenSo, ')
+          ..write('standardZeitenProTag: $standardZeitenProTag, ')
+          ..write('pausenregelAktiv: $pausenregelAktiv, ')
+          ..write('pausenSchwelleMin: $pausenSchwelleMin, ')
+          ..write('pausenMindestMin: $pausenMindestMin, ')
           ..write('standardBeginnMin: $standardBeginnMin, ')
           ..write('standardEndeMin: $standardEndeMin, ')
           ..write('standardPauseMin: $standardPauseMin, ')
@@ -2709,6 +3298,314 @@ class TimeEntriesCompanion extends UpdateCompanion<TimeEntry> {
           ..write('sonderurlaubGrund: $sonderurlaubGrund, ')
           ..write('urlaubMinuten: $urlaubMinuten, ')
           ..write('halberTag: $halberTag')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ZeitbloeckeTable extends Zeitbloecke
+    with TableInfo<$ZeitbloeckeTable, Zeitblock> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ZeitbloeckeTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _eintragIdMeta = const VerificationMeta(
+    'eintragId',
+  );
+  @override
+  late final GeneratedColumn<int> eintragId = GeneratedColumn<int>(
+    'eintrag_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES time_entries (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _beginnMinMeta = const VerificationMeta(
+    'beginnMin',
+  );
+  @override
+  late final GeneratedColumn<int> beginnMin = GeneratedColumn<int>(
+    'beginn_min',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endeMinMeta = const VerificationMeta(
+    'endeMin',
+  );
+  @override
+  late final GeneratedColumn<int> endeMin = GeneratedColumn<int>(
+    'ende_min',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, eintragId, beginnMin, endeMin];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'zeitbloecke';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Zeitblock> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('eintrag_id')) {
+      context.handle(
+        _eintragIdMeta,
+        eintragId.isAcceptableOrUnknown(data['eintrag_id']!, _eintragIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eintragIdMeta);
+    }
+    if (data.containsKey('beginn_min')) {
+      context.handle(
+        _beginnMinMeta,
+        beginnMin.isAcceptableOrUnknown(data['beginn_min']!, _beginnMinMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_beginnMinMeta);
+    }
+    if (data.containsKey('ende_min')) {
+      context.handle(
+        _endeMinMeta,
+        endeMin.isAcceptableOrUnknown(data['ende_min']!, _endeMinMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Zeitblock map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Zeitblock(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      eintragId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}eintrag_id'],
+      )!,
+      beginnMin: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}beginn_min'],
+      )!,
+      endeMin: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ende_min'],
+      ),
+    );
+  }
+
+  @override
+  $ZeitbloeckeTable createAlias(String alias) {
+    return $ZeitbloeckeTable(attachedDatabase, alias);
+  }
+}
+
+class Zeitblock extends DataClass implements Insertable<Zeitblock> {
+  final int id;
+  final int eintragId;
+
+  /// Minuten seit Mitternacht.
+  final int beginnMin;
+
+  /// `null` = offener Block (noch nicht ausgestempelt).
+  final int? endeMin;
+  const Zeitblock({
+    required this.id,
+    required this.eintragId,
+    required this.beginnMin,
+    this.endeMin,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['eintrag_id'] = Variable<int>(eintragId);
+    map['beginn_min'] = Variable<int>(beginnMin);
+    if (!nullToAbsent || endeMin != null) {
+      map['ende_min'] = Variable<int>(endeMin);
+    }
+    return map;
+  }
+
+  ZeitbloeckeCompanion toCompanion(bool nullToAbsent) {
+    return ZeitbloeckeCompanion(
+      id: Value(id),
+      eintragId: Value(eintragId),
+      beginnMin: Value(beginnMin),
+      endeMin: endeMin == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endeMin),
+    );
+  }
+
+  factory Zeitblock.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Zeitblock(
+      id: serializer.fromJson<int>(json['id']),
+      eintragId: serializer.fromJson<int>(json['eintragId']),
+      beginnMin: serializer.fromJson<int>(json['beginnMin']),
+      endeMin: serializer.fromJson<int?>(json['endeMin']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'eintragId': serializer.toJson<int>(eintragId),
+      'beginnMin': serializer.toJson<int>(beginnMin),
+      'endeMin': serializer.toJson<int?>(endeMin),
+    };
+  }
+
+  Zeitblock copyWith({
+    int? id,
+    int? eintragId,
+    int? beginnMin,
+    Value<int?> endeMin = const Value.absent(),
+  }) => Zeitblock(
+    id: id ?? this.id,
+    eintragId: eintragId ?? this.eintragId,
+    beginnMin: beginnMin ?? this.beginnMin,
+    endeMin: endeMin.present ? endeMin.value : this.endeMin,
+  );
+  Zeitblock copyWithCompanion(ZeitbloeckeCompanion data) {
+    return Zeitblock(
+      id: data.id.present ? data.id.value : this.id,
+      eintragId: data.eintragId.present ? data.eintragId.value : this.eintragId,
+      beginnMin: data.beginnMin.present ? data.beginnMin.value : this.beginnMin,
+      endeMin: data.endeMin.present ? data.endeMin.value : this.endeMin,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Zeitblock(')
+          ..write('id: $id, ')
+          ..write('eintragId: $eintragId, ')
+          ..write('beginnMin: $beginnMin, ')
+          ..write('endeMin: $endeMin')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, eintragId, beginnMin, endeMin);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Zeitblock &&
+          other.id == this.id &&
+          other.eintragId == this.eintragId &&
+          other.beginnMin == this.beginnMin &&
+          other.endeMin == this.endeMin);
+}
+
+class ZeitbloeckeCompanion extends UpdateCompanion<Zeitblock> {
+  final Value<int> id;
+  final Value<int> eintragId;
+  final Value<int> beginnMin;
+  final Value<int?> endeMin;
+  const ZeitbloeckeCompanion({
+    this.id = const Value.absent(),
+    this.eintragId = const Value.absent(),
+    this.beginnMin = const Value.absent(),
+    this.endeMin = const Value.absent(),
+  });
+  ZeitbloeckeCompanion.insert({
+    this.id = const Value.absent(),
+    required int eintragId,
+    required int beginnMin,
+    this.endeMin = const Value.absent(),
+  }) : eintragId = Value(eintragId),
+       beginnMin = Value(beginnMin);
+  static Insertable<Zeitblock> custom({
+    Expression<int>? id,
+    Expression<int>? eintragId,
+    Expression<int>? beginnMin,
+    Expression<int>? endeMin,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (eintragId != null) 'eintrag_id': eintragId,
+      if (beginnMin != null) 'beginn_min': beginnMin,
+      if (endeMin != null) 'ende_min': endeMin,
+    });
+  }
+
+  ZeitbloeckeCompanion copyWith({
+    Value<int>? id,
+    Value<int>? eintragId,
+    Value<int>? beginnMin,
+    Value<int?>? endeMin,
+  }) {
+    return ZeitbloeckeCompanion(
+      id: id ?? this.id,
+      eintragId: eintragId ?? this.eintragId,
+      beginnMin: beginnMin ?? this.beginnMin,
+      endeMin: endeMin ?? this.endeMin,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (eintragId.present) {
+      map['eintrag_id'] = Variable<int>(eintragId.value);
+    }
+    if (beginnMin.present) {
+      map['beginn_min'] = Variable<int>(beginnMin.value);
+    }
+    if (endeMin.present) {
+      map['ende_min'] = Variable<int>(endeMin.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ZeitbloeckeCompanion(')
+          ..write('id: $id, ')
+          ..write('eintragId: $eintragId, ')
+          ..write('beginnMin: $beginnMin, ')
+          ..write('endeMin: $endeMin')
           ..write(')'))
         .toString();
   }
@@ -4261,6 +5158,7 @@ abstract class _$ZeitexaDb extends GeneratedDatabase {
   late final $UserSettingsTable userSettings = $UserSettingsTable(this);
   late final $PlacesTable places = $PlacesTable(this);
   late final $TimeEntriesTable timeEntries = $TimeEntriesTable(this);
+  late final $ZeitbloeckeTable zeitbloecke = $ZeitbloeckeTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   late final $BrandingsTable brandings = $BrandingsTable(this);
   late final $ImportedEntriesTable importedEntries = $ImportedEntriesTable(
@@ -4275,10 +5173,21 @@ abstract class _$ZeitexaDb extends GeneratedDatabase {
     userSettings,
     places,
     timeEntries,
+    zeitbloecke,
     appSettings,
     brandings,
     importedEntries,
   ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'time_entries',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('zeitbloecke', kind: UpdateKind.delete)],
+    ),
+  ]);
 }
 
 typedef $$UsersTableCreateCompanionBuilder =
@@ -4735,6 +5644,17 @@ typedef $$UserSettingsTableCreateCompanionBuilder =
       Value<double> sollStundenTag,
       Value<double> sollStundenMoDo,
       Value<double> sollStundenFr,
+      Value<double> sollStundenMo,
+      Value<double> sollStundenDi,
+      Value<double> sollStundenMi,
+      Value<double> sollStundenDo,
+      Value<double> sollStundenFrTag,
+      Value<double> sollStundenSa,
+      Value<double> sollStundenSo,
+      Value<String?> standardZeitenProTag,
+      Value<bool> pausenregelAktiv,
+      Value<int> pausenSchwelleMin,
+      Value<int> pausenMindestMin,
       Value<int> standardBeginnMin,
       Value<int> standardEndeMin,
       Value<int> standardPauseMin,
@@ -4756,6 +5676,17 @@ typedef $$UserSettingsTableUpdateCompanionBuilder =
       Value<double> sollStundenTag,
       Value<double> sollStundenMoDo,
       Value<double> sollStundenFr,
+      Value<double> sollStundenMo,
+      Value<double> sollStundenDi,
+      Value<double> sollStundenMi,
+      Value<double> sollStundenDo,
+      Value<double> sollStundenFrTag,
+      Value<double> sollStundenSa,
+      Value<double> sollStundenSo,
+      Value<String?> standardZeitenProTag,
+      Value<bool> pausenregelAktiv,
+      Value<int> pausenSchwelleMin,
+      Value<int> pausenMindestMin,
       Value<int> standardBeginnMin,
       Value<int> standardEndeMin,
       Value<int> standardPauseMin,
@@ -4820,6 +5751,61 @@ class $$UserSettingsTableFilterComposer
 
   ColumnFilters<double> get sollStundenFr => $composableBuilder(
     column: $table.sollStundenFr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sollStundenMo => $composableBuilder(
+    column: $table.sollStundenMo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sollStundenDi => $composableBuilder(
+    column: $table.sollStundenDi,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sollStundenMi => $composableBuilder(
+    column: $table.sollStundenMi,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sollStundenDo => $composableBuilder(
+    column: $table.sollStundenDo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sollStundenFrTag => $composableBuilder(
+    column: $table.sollStundenFrTag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sollStundenSa => $composableBuilder(
+    column: $table.sollStundenSa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sollStundenSo => $composableBuilder(
+    column: $table.sollStundenSo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get standardZeitenProTag => $composableBuilder(
+    column: $table.standardZeitenProTag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get pausenregelAktiv => $composableBuilder(
+    column: $table.pausenregelAktiv,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pausenSchwelleMin => $composableBuilder(
+    column: $table.pausenSchwelleMin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pausenMindestMin => $composableBuilder(
+    column: $table.pausenMindestMin,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4941,6 +5927,61 @@ class $$UserSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get sollStundenMo => $composableBuilder(
+    column: $table.sollStundenMo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sollStundenDi => $composableBuilder(
+    column: $table.sollStundenDi,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sollStundenMi => $composableBuilder(
+    column: $table.sollStundenMi,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sollStundenDo => $composableBuilder(
+    column: $table.sollStundenDo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sollStundenFrTag => $composableBuilder(
+    column: $table.sollStundenFrTag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sollStundenSa => $composableBuilder(
+    column: $table.sollStundenSa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sollStundenSo => $composableBuilder(
+    column: $table.sollStundenSo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get standardZeitenProTag => $composableBuilder(
+    column: $table.standardZeitenProTag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get pausenregelAktiv => $composableBuilder(
+    column: $table.pausenregelAktiv,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pausenSchwelleMin => $composableBuilder(
+    column: $table.pausenSchwelleMin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pausenMindestMin => $composableBuilder(
+    column: $table.pausenMindestMin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get standardBeginnMin => $composableBuilder(
     column: $table.standardBeginnMin,
     builder: (column) => ColumnOrderings(column),
@@ -5055,6 +6096,61 @@ class $$UserSettingsTableAnnotationComposer
 
   GeneratedColumn<double> get sollStundenFr => $composableBuilder(
     column: $table.sollStundenFr,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sollStundenMo => $composableBuilder(
+    column: $table.sollStundenMo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sollStundenDi => $composableBuilder(
+    column: $table.sollStundenDi,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sollStundenMi => $composableBuilder(
+    column: $table.sollStundenMi,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sollStundenDo => $composableBuilder(
+    column: $table.sollStundenDo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sollStundenFrTag => $composableBuilder(
+    column: $table.sollStundenFrTag,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sollStundenSa => $composableBuilder(
+    column: $table.sollStundenSa,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sollStundenSo => $composableBuilder(
+    column: $table.sollStundenSo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get standardZeitenProTag => $composableBuilder(
+    column: $table.standardZeitenProTag,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get pausenregelAktiv => $composableBuilder(
+    column: $table.pausenregelAktiv,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get pausenSchwelleMin => $composableBuilder(
+    column: $table.pausenSchwelleMin,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get pausenMindestMin => $composableBuilder(
+    column: $table.pausenMindestMin,
     builder: (column) => column,
   );
 
@@ -5181,6 +6277,17 @@ class $$UserSettingsTableTableManager
                 Value<double> sollStundenTag = const Value.absent(),
                 Value<double> sollStundenMoDo = const Value.absent(),
                 Value<double> sollStundenFr = const Value.absent(),
+                Value<double> sollStundenMo = const Value.absent(),
+                Value<double> sollStundenDi = const Value.absent(),
+                Value<double> sollStundenMi = const Value.absent(),
+                Value<double> sollStundenDo = const Value.absent(),
+                Value<double> sollStundenFrTag = const Value.absent(),
+                Value<double> sollStundenSa = const Value.absent(),
+                Value<double> sollStundenSo = const Value.absent(),
+                Value<String?> standardZeitenProTag = const Value.absent(),
+                Value<bool> pausenregelAktiv = const Value.absent(),
+                Value<int> pausenSchwelleMin = const Value.absent(),
+                Value<int> pausenMindestMin = const Value.absent(),
                 Value<int> standardBeginnMin = const Value.absent(),
                 Value<int> standardEndeMin = const Value.absent(),
                 Value<int> standardPauseMin = const Value.absent(),
@@ -5201,6 +6308,17 @@ class $$UserSettingsTableTableManager
                 sollStundenTag: sollStundenTag,
                 sollStundenMoDo: sollStundenMoDo,
                 sollStundenFr: sollStundenFr,
+                sollStundenMo: sollStundenMo,
+                sollStundenDi: sollStundenDi,
+                sollStundenMi: sollStundenMi,
+                sollStundenDo: sollStundenDo,
+                sollStundenFrTag: sollStundenFrTag,
+                sollStundenSa: sollStundenSa,
+                sollStundenSo: sollStundenSo,
+                standardZeitenProTag: standardZeitenProTag,
+                pausenregelAktiv: pausenregelAktiv,
+                pausenSchwelleMin: pausenSchwelleMin,
+                pausenMindestMin: pausenMindestMin,
                 standardBeginnMin: standardBeginnMin,
                 standardEndeMin: standardEndeMin,
                 standardPauseMin: standardPauseMin,
@@ -5222,6 +6340,17 @@ class $$UserSettingsTableTableManager
                 Value<double> sollStundenTag = const Value.absent(),
                 Value<double> sollStundenMoDo = const Value.absent(),
                 Value<double> sollStundenFr = const Value.absent(),
+                Value<double> sollStundenMo = const Value.absent(),
+                Value<double> sollStundenDi = const Value.absent(),
+                Value<double> sollStundenMi = const Value.absent(),
+                Value<double> sollStundenDo = const Value.absent(),
+                Value<double> sollStundenFrTag = const Value.absent(),
+                Value<double> sollStundenSa = const Value.absent(),
+                Value<double> sollStundenSo = const Value.absent(),
+                Value<String?> standardZeitenProTag = const Value.absent(),
+                Value<bool> pausenregelAktiv = const Value.absent(),
+                Value<int> pausenSchwelleMin = const Value.absent(),
+                Value<int> pausenMindestMin = const Value.absent(),
                 Value<int> standardBeginnMin = const Value.absent(),
                 Value<int> standardEndeMin = const Value.absent(),
                 Value<int> standardPauseMin = const Value.absent(),
@@ -5242,6 +6371,17 @@ class $$UserSettingsTableTableManager
                 sollStundenTag: sollStundenTag,
                 sollStundenMoDo: sollStundenMoDo,
                 sollStundenFr: sollStundenFr,
+                sollStundenMo: sollStundenMo,
+                sollStundenDi: sollStundenDi,
+                sollStundenMi: sollStundenMi,
+                sollStundenDo: sollStundenDo,
+                sollStundenFrTag: sollStundenFrTag,
+                sollStundenSa: sollStundenSa,
+                sollStundenSo: sollStundenSo,
+                standardZeitenProTag: standardZeitenProTag,
+                pausenregelAktiv: pausenregelAktiv,
+                pausenSchwelleMin: pausenSchwelleMin,
+                pausenMindestMin: pausenMindestMin,
                 standardBeginnMin: standardBeginnMin,
                 standardEndeMin: standardEndeMin,
                 standardPauseMin: standardPauseMin,
@@ -5661,6 +6801,24 @@ final class $$TimeEntriesTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<$ZeitbloeckeTable, List<Zeitblock>>
+  _zeitbloeckeRefsTable(_$ZeitexaDb db) => MultiTypedResultKey.fromTable(
+    db.zeitbloecke,
+    aliasName: 'time_entries__id__zeitbloecke__eintrag_id',
+  );
+
+  $$ZeitbloeckeTableProcessedTableManager get zeitbloeckeRefs {
+    final manager = $$ZeitbloeckeTableTableManager(
+      $_db,
+      $_db.zeitbloecke,
+    ).filter((f) => f.eintragId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_zeitbloeckeRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$TimeEntriesTableFilterComposer
@@ -5768,6 +6926,31 @@ class $$TimeEntriesTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> zeitbloeckeRefs(
+    Expression<bool> Function($$ZeitbloeckeTableFilterComposer f) f,
+  ) {
+    final $$ZeitbloeckeTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.zeitbloecke,
+      getReferencedColumn: (t) => t.eintragId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ZeitbloeckeTableFilterComposer(
+            $db: $db,
+            $table: $db.zeitbloecke,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -5966,6 +7149,31 @@ class $$TimeEntriesTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> zeitbloeckeRefs<T extends Object>(
+    Expression<T> Function($$ZeitbloeckeTableAnnotationComposer a) f,
+  ) {
+    final $$ZeitbloeckeTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.zeitbloecke,
+      getReferencedColumn: (t) => t.eintragId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ZeitbloeckeTableAnnotationComposer(
+            $db: $db,
+            $table: $db.zeitbloecke,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TimeEntriesTableTableManager
@@ -5981,7 +7189,11 @@ class $$TimeEntriesTableTableManager
           $$TimeEntriesTableUpdateCompanionBuilder,
           (TimeEntry, $$TimeEntriesTableReferences),
           TimeEntry,
-          PrefetchHooks Function({bool userId, bool ortId})
+          PrefetchHooks Function({
+            bool userId,
+            bool ortId,
+            bool zeitbloeckeRefs,
+          })
         > {
   $$TimeEntriesTableTableManager(_$ZeitexaDb db, $TimeEntriesTable table)
     : super(
@@ -6060,7 +7272,341 @@ class $$TimeEntriesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({userId = false, ortId = false}) {
+          prefetchHooksCallback:
+              ({userId = false, ortId = false, zeitbloeckeRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (zeitbloeckeRefs) db.zeitbloecke,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (userId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.userId,
+                                    referencedTable:
+                                        $$TimeEntriesTableReferences
+                                            ._userIdTable(db),
+                                    referencedColumn:
+                                        $$TimeEntriesTableReferences
+                                            ._userIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (ortId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ortId,
+                                    referencedTable:
+                                        $$TimeEntriesTableReferences
+                                            ._ortIdTable(db),
+                                    referencedColumn:
+                                        $$TimeEntriesTableReferences
+                                            ._ortIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (zeitbloeckeRefs)
+                        await $_getPrefetchedData<
+                          TimeEntry,
+                          $TimeEntriesTable,
+                          Zeitblock
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TimeEntriesTableReferences
+                              ._zeitbloeckeRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TimeEntriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).zeitbloeckeRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.eintragId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$TimeEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$ZeitexaDb,
+      $TimeEntriesTable,
+      TimeEntry,
+      $$TimeEntriesTableFilterComposer,
+      $$TimeEntriesTableOrderingComposer,
+      $$TimeEntriesTableAnnotationComposer,
+      $$TimeEntriesTableCreateCompanionBuilder,
+      $$TimeEntriesTableUpdateCompanionBuilder,
+      (TimeEntry, $$TimeEntriesTableReferences),
+      TimeEntry,
+      PrefetchHooks Function({bool userId, bool ortId, bool zeitbloeckeRefs})
+    >;
+typedef $$ZeitbloeckeTableCreateCompanionBuilder =
+    ZeitbloeckeCompanion Function({
+      Value<int> id,
+      required int eintragId,
+      required int beginnMin,
+      Value<int?> endeMin,
+    });
+typedef $$ZeitbloeckeTableUpdateCompanionBuilder =
+    ZeitbloeckeCompanion Function({
+      Value<int> id,
+      Value<int> eintragId,
+      Value<int> beginnMin,
+      Value<int?> endeMin,
+    });
+
+final class $$ZeitbloeckeTableReferences
+    extends BaseReferences<_$ZeitexaDb, $ZeitbloeckeTable, Zeitblock> {
+  $$ZeitbloeckeTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $TimeEntriesTable _eintragIdTable(_$ZeitexaDb db) =>
+      db.timeEntries.createAlias('zeitbloecke__eintrag_id__time_entries__id');
+
+  $$TimeEntriesTableProcessedTableManager get eintragId {
+    final $_column = $_itemColumn<int>('eintrag_id')!;
+
+    final manager = $$TimeEntriesTableTableManager(
+      $_db,
+      $_db.timeEntries,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_eintragIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ZeitbloeckeTableFilterComposer
+    extends Composer<_$ZeitexaDb, $ZeitbloeckeTable> {
+  $$ZeitbloeckeTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get beginnMin => $composableBuilder(
+    column: $table.beginnMin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endeMin => $composableBuilder(
+    column: $table.endeMin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TimeEntriesTableFilterComposer get eintragId {
+    final $$TimeEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.eintragId,
+      referencedTable: $db.timeEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimeEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.timeEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ZeitbloeckeTableOrderingComposer
+    extends Composer<_$ZeitexaDb, $ZeitbloeckeTable> {
+  $$ZeitbloeckeTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get beginnMin => $composableBuilder(
+    column: $table.beginnMin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endeMin => $composableBuilder(
+    column: $table.endeMin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TimeEntriesTableOrderingComposer get eintragId {
+    final $$TimeEntriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.eintragId,
+      referencedTable: $db.timeEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimeEntriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.timeEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ZeitbloeckeTableAnnotationComposer
+    extends Composer<_$ZeitexaDb, $ZeitbloeckeTable> {
+  $$ZeitbloeckeTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get beginnMin =>
+      $composableBuilder(column: $table.beginnMin, builder: (column) => column);
+
+  GeneratedColumn<int> get endeMin =>
+      $composableBuilder(column: $table.endeMin, builder: (column) => column);
+
+  $$TimeEntriesTableAnnotationComposer get eintragId {
+    final $$TimeEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.eintragId,
+      referencedTable: $db.timeEntries,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimeEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.timeEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ZeitbloeckeTableTableManager
+    extends
+        RootTableManager<
+          _$ZeitexaDb,
+          $ZeitbloeckeTable,
+          Zeitblock,
+          $$ZeitbloeckeTableFilterComposer,
+          $$ZeitbloeckeTableOrderingComposer,
+          $$ZeitbloeckeTableAnnotationComposer,
+          $$ZeitbloeckeTableCreateCompanionBuilder,
+          $$ZeitbloeckeTableUpdateCompanionBuilder,
+          (Zeitblock, $$ZeitbloeckeTableReferences),
+          Zeitblock,
+          PrefetchHooks Function({bool eintragId})
+        > {
+  $$ZeitbloeckeTableTableManager(_$ZeitexaDb db, $ZeitbloeckeTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ZeitbloeckeTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ZeitbloeckeTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ZeitbloeckeTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> eintragId = const Value.absent(),
+                Value<int> beginnMin = const Value.absent(),
+                Value<int?> endeMin = const Value.absent(),
+              }) => ZeitbloeckeCompanion(
+                id: id,
+                eintragId: eintragId,
+                beginnMin: beginnMin,
+                endeMin: endeMin,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int eintragId,
+                required int beginnMin,
+                Value<int?> endeMin = const Value.absent(),
+              }) => ZeitbloeckeCompanion.insert(
+                id: id,
+                eintragId: eintragId,
+                beginnMin: beginnMin,
+                endeMin: endeMin,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ZeitbloeckeTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({eintragId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -6080,28 +7626,15 @@ class $$TimeEntriesTableTableManager
                       dynamic
                     >
                   >(state) {
-                    if (userId) {
+                    if (eintragId) {
                       state =
                           state.withJoin(
                                 currentTable: table,
-                                currentColumn: table.userId,
-                                referencedTable: $$TimeEntriesTableReferences
-                                    ._userIdTable(db),
-                                referencedColumn: $$TimeEntriesTableReferences
-                                    ._userIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
-                    if (ortId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.ortId,
-                                referencedTable: $$TimeEntriesTableReferences
-                                    ._ortIdTable(db),
-                                referencedColumn: $$TimeEntriesTableReferences
-                                    ._ortIdTable(db)
+                                currentColumn: table.eintragId,
+                                referencedTable: $$ZeitbloeckeTableReferences
+                                    ._eintragIdTable(db),
+                                referencedColumn: $$ZeitbloeckeTableReferences
+                                    ._eintragIdTable(db)
                                     .id,
                               )
                               as T;
@@ -6118,19 +7651,19 @@ class $$TimeEntriesTableTableManager
       );
 }
 
-typedef $$TimeEntriesTableProcessedTableManager =
+typedef $$ZeitbloeckeTableProcessedTableManager =
     ProcessedTableManager<
       _$ZeitexaDb,
-      $TimeEntriesTable,
-      TimeEntry,
-      $$TimeEntriesTableFilterComposer,
-      $$TimeEntriesTableOrderingComposer,
-      $$TimeEntriesTableAnnotationComposer,
-      $$TimeEntriesTableCreateCompanionBuilder,
-      $$TimeEntriesTableUpdateCompanionBuilder,
-      (TimeEntry, $$TimeEntriesTableReferences),
-      TimeEntry,
-      PrefetchHooks Function({bool userId, bool ortId})
+      $ZeitbloeckeTable,
+      Zeitblock,
+      $$ZeitbloeckeTableFilterComposer,
+      $$ZeitbloeckeTableOrderingComposer,
+      $$ZeitbloeckeTableAnnotationComposer,
+      $$ZeitbloeckeTableCreateCompanionBuilder,
+      $$ZeitbloeckeTableUpdateCompanionBuilder,
+      (Zeitblock, $$ZeitbloeckeTableReferences),
+      Zeitblock,
+      PrefetchHooks Function({bool eintragId})
     >;
 typedef $$AppSettingsTableCreateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -6913,6 +8446,8 @@ class $ZeitexaDbManager {
       $$PlacesTableTableManager(_db, _db.places);
   $$TimeEntriesTableTableManager get timeEntries =>
       $$TimeEntriesTableTableManager(_db, _db.timeEntries);
+  $$ZeitbloeckeTableTableManager get zeitbloecke =>
+      $$ZeitbloeckeTableTableManager(_db, _db.zeitbloecke);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
   $$BrandingsTableTableManager get brandings =>

@@ -26,6 +26,9 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
   String? _sperrMonat; // 'JJJJ-MM' des noch nicht versendeten Vormonats
   final _liste = ScrollController();
 
+  /// Einmaliges Autoscrollen zum heutigen Tag nach dem ersten Aufbau.
+  bool _heuteGescrollt = false;
+
   @override
   void dispose() {
     _liste.dispose();
@@ -101,6 +104,15 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
     });
   }
 
+  /// Beim ersten Anzeigen des aktuellen Monats einmal zum heutigen Tag
+  /// scrollen (deutlichere „Heute"-Ansicht beim Öffnen der App).
+  void _vielleichtZuHeuteScrollen(DateTime heute) {
+    if (_heuteGescrollt) return;
+    if (_jahr != heute.year || _monat != heute.month) return;
+    _heuteGescrollt = true;
+    _scrolleZuHeute(heute);
+  }
+
   /// Automatischer SMTP-Versand des Vormonats beim ersten Start im neuen Monat.
   Future<void> _autoVersand() async {
     final db = ref.read(dbProvider);
@@ -148,6 +160,55 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
       _jahr = d.year;
       _monat = d.month;
     });
+  }
+
+  void _springeZu(int jahr, int monat) {
+    setState(() {
+      _jahr = jahr;
+      _monat = monat;
+    });
+  }
+
+  /// Dropdown zur schnellen Monatsauswahl: die letzten 24 Monate plus die
+  /// kommenden drei, neueste zuerst, aktueller Monat markiert.
+  Future<void> _monatDropdown() async {
+    final heute = DateTime.now();
+    final monate = [
+      for (var i = 3; i >= -24; i--) DateTime(heute.year, heute.month + i, 1),
+    ];
+    final gewaehlt = await showModalBottomSheet<DateTime>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => ListView(
+        shrinkWrap: true,
+        children: [
+          for (final m in monate)
+            ListTile(
+              title: Text(monatsTitel(m.year, m.month)),
+              selected: m.year == _jahr && m.month == _monat,
+              trailing: m.year == _jahr && m.month == _monat
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () => Navigator.pop(context, m),
+            ),
+        ],
+      ),
+    );
+    if (gewaehlt != null) _springeZu(gewaehlt.year, gewaehlt.month);
+  }
+
+  /// Kalender-Icon: springt per (deutschem) Datumswähler in einen beliebigen
+  /// Monat.
+  Future<void> _kalenderSpringen() async {
+    final heute = DateTime.now();
+    final ziel = await showDatePicker(
+      context: context,
+      initialDate: DateTime(_jahr, _monat, 1),
+      firstDate: DateTime(heute.year - 5, 1, 1),
+      lastDate: DateTime(heute.year + 2, 12, 31),
+      helpText: 'Monat auswählen',
+    );
+    if (ziel != null) _springeZu(ziel.year, ziel.month);
   }
 
   Future<void> _oeffneEintrag(DateTime datum, TimeEntry? eintrag) async {
@@ -269,8 +330,38 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
     final heute = DateTime.now();
     return Scaffold(
       appBar: AppBar(
-        title: Text('${monatsTitel(_jahr, _monat)} – ${widget.user.displayName}'),
+        title: InkWell(
+          onTap: _monatDropdown,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(monatsTitel(_jahr, _monat),
+                          style: Theme.of(context).textTheme.titleMedium),
+                      Text(widget.user.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelSmall),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_drop_down),
+              ],
+            ),
+          ),
+        ),
         actions: [
+          IconButton(
+              tooltip: 'Im Kalender springen',
+              onPressed: _kalenderSpringen,
+              icon: const Icon(Icons.calendar_month)),
           TextButton.icon(
               onPressed: _heute,
               style: TextButton.styleFrom(
@@ -350,77 +441,105 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
               ],
             ),
           Expanded(
-            child: StreamBuilder<List<TimeEntry>>(
-              stream:
-                  ref.read(dbProvider).watchMonth(widget.user.id, _jahr, _monat),
-              builder: (context, snap) {
-                final eintraege = snap.data ?? const <TimeEntry>[];
-                return StreamBuilder<List<TimeEntry>>(
-                  stream: ref.read(dbProvider).watchAllEntries(widget.user.id),
-                  builder: (context, alleSnap) {
-                    final alleEintraege = alleSnap.data ?? const <TimeEntry>[];
-                    return FutureBuilder<Map<int, String>>(
-                      future: ref
-                          .read(dbProvider)
-                          .select(ref.read(dbProvider).places)
-                          .get()
-                          .then((ps) => {for (final p in ps) p.id: p.name}),
-                      builder: (context, orteSnap) {
-                        final orte = orteSnap.data ?? const <int, String>{};
-                        final zeilen = monatsZeilen(
-                            jahr: _jahr,
-                            monat: _monat,
-                            eintraege: eintraege,
-                            ortNamen: orte,
-                            regel: regel);
-                        final summe = monatsSumme(eintraege, regel);
-                        final konten = berechneKonten(
-                          alleEintraege: alleEintraege,
-                          regel: regel,
-                          jahr: _jahr,
-                          monat: _monat,
-                          anfangsstandUrlaubTage:
-                              settings.anfangsstandUrlaubTage,
-                          anfangsstandZeitausgleichStunden:
-                              settings.anfangsstandZeitausgleichMin / 60.0,
-                          anfangsstandStichtag: settings.anfangsstandStichtag,
-                          urlaubFrGetrennt: settings.urlaubFrGetrennt,
-                          anfangsstandUrlaubFrTage:
-                              settings.anfangsstandUrlaubFrTage,
-                          firmenurlaubAktiv: settings.firmenurlaubAktiv,
-                          anfangsstandFirmenurlaubTage:
-                              settings.anfangsstandFirmenurlaubTage,
-                        );
-                        return Column(children: [
-                          _UebersichtKarte(
-                              summe: summe,
-                              konten: konten,
-                              urlaubFrGetrennt: settings.urlaubFrGetrennt,
-                              firmenurlaubAktiv: settings.firmenurlaubAktiv),
-                          Expanded(
-                            child: ListView.separated(
-                              controller: _liste,
-                              itemCount: zeilen.length,
-                              separatorBuilder: (_, _) =>
-                                  const Divider(height: 1),
-                              itemBuilder: (context, i) => _TagZeile(
-                                zeile: zeilen[i],
-                                istHeute: zeilen[i].datum.year == heute.year &&
-                                    zeilen[i].datum.month == heute.month &&
-                                    zeilen[i].datum.day == heute.day,
-                                onTap: () => _oeffneEintrag(
-                                    zeilen[i].datum, zeilen[i].eintrag),
-                              ),
-                            ),
-                          ),
-                        ]);
-                      },
-                    );
-                  },
-                );
-              },
-            ),
+            child: Builder(builder: (context) {
+              final schluessel =
+                  (userId: widget.user.id, jahr: _jahr, monat: _monat);
+              final eintraege =
+                  ref.watch(monatEintraegeProvider(schluessel)).value ??
+                      const <TimeEntry>[];
+              final alleEintraege =
+                  ref.watch(alleEintraegeProvider(widget.user.id)).value ??
+                      const <TimeEntry>[];
+              final orte =
+                  ref.watch(ortNamenProvider).value ?? const <int, String>{};
+              final blockAnzahl =
+                  ref.watch(blockAnzahlProvider(schluessel)).value ??
+                      const <int, int>{};
+              final zeilen = monatsZeilen(
+                  jahr: _jahr,
+                  monat: _monat,
+                  eintraege: eintraege,
+                  ortNamen: orte,
+                  regel: regel);
+              final summe = monatsSumme(eintraege, regel);
+              final konten = berechneKonten(
+                alleEintraege: alleEintraege,
+                regel: regel,
+                jahr: _jahr,
+                monat: _monat,
+                anfangsstandUrlaubTage: settings.anfangsstandUrlaubTage,
+                anfangsstandZeitausgleichStunden:
+                    settings.anfangsstandZeitausgleichMin / 60.0,
+                anfangsstandStichtag: settings.anfangsstandStichtag,
+                urlaubFrGetrennt: settings.urlaubFrGetrennt,
+                anfangsstandUrlaubFrTage: settings.anfangsstandUrlaubFrTage,
+                firmenurlaubAktiv: settings.firmenurlaubAktiv,
+                anfangsstandFirmenurlaubTage:
+                    settings.anfangsstandFirmenurlaubTage,
+              );
+              _vielleichtZuHeuteScrollen(heute);
+              return Column(children: [
+                _UebersichtKarte(
+                    summe: summe,
+                    konten: konten,
+                    urlaubFrGetrennt: settings.urlaubFrGetrennt,
+                    firmenurlaubAktiv: settings.firmenurlaubAktiv),
+                const _SpaltenKopf(),
+                Expanded(
+                  child: ListView.separated(
+                    controller: _liste,
+                    itemCount: zeilen.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (context, i) => _TagZeile(
+                      zeile: zeilen[i],
+                      blockAnzahl:
+                          blockAnzahl[zeilen[i].eintrag?.id ?? -1] ?? 1,
+                      istHeute: zeilen[i].datum.year == heute.year &&
+                          zeilen[i].datum.month == heute.month &&
+                          zeilen[i].datum.day == heute.day,
+                      onTap: () =>
+                          _oeffneEintrag(zeilen[i].datum, zeilen[i].eintrag),
+                    ),
+                  ),
+                ),
+              ]);
+            }),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Gemeinsame Spaltenbreiten von Kopfzeile und Tageszeilen, damit die
+/// Beschriftungen Ist/Soll/± genau über den Zahlen stehen.
+const double _kBreiteTag = 46;
+const double _kBreiteIst = 48;
+const double _kBreiteSoll = 48;
+const double _kBreitePlus = 54;
+
+/// Feste, beim Scrollen sichtbare Kopfzeile über der Tagesliste – definiert
+/// klar, welche Zahl Ist, Soll bzw. die Differenz ist.
+class _SpaltenKopf extends StatelessWidget {
+  const _SpaltenKopf();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final stil = theme.textTheme.labelSmall
+        ?.copyWith(fontWeight: FontWeight.bold, color: theme.hintColor);
+    Widget z(String t, double w) => SizedBox(
+        width: w, child: Text(t, textAlign: TextAlign.right, style: stil));
+    return Container(
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Row(
+        children: [
+          SizedBox(width: _kBreiteTag, child: Text('Tag', style: stil)),
+          Expanded(child: Text('Zeiten', style: stil)),
+          z('Ist', _kBreiteIst),
+          z('Soll', _kBreiteSoll),
+          z('±', _kBreitePlus),
         ],
       ),
     );
@@ -430,10 +549,14 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
 class _TagZeile extends StatelessWidget {
   final MonatsZeile zeile;
   final bool istHeute;
+  final int blockAnzahl;
   final VoidCallback onTap;
 
   const _TagZeile(
-      {required this.zeile, required this.istHeute, required this.onTap});
+      {required this.zeile,
+      required this.istHeute,
+      required this.blockAnzahl,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -441,6 +564,10 @@ class _TagZeile extends StatelessWidget {
     final e = zeile.eintrag;
     final erg = zeile.ergebnis;
     final istFeiertag = zeile.feiertagsname != null;
+    final offenerBlock = e != null &&
+        e.tagesart == Tagesart.arbeit &&
+        e.beginnMin != null &&
+        e.endeMin == null;
 
     Color? hintergrund;
     if (istHeute) {
@@ -457,10 +584,15 @@ class _TagZeile extends StatelessWidget {
     } else {
       switch (e.tagesart) {
         case Tagesart.arbeit:
-          mitte =
-              '${formatUhrzeit(e.beginnMin)}–${formatUhrzeit(e.endeMin)}'
-              '${e.pauseMin > 0 ? ' · ${e.pauseMin} min Pause' : ''}'
-              '${zeile.ort.isNotEmpty ? ' · ${zeile.ort}' : ''}';
+          if (offenerBlock) {
+            mitte = 'läuft seit ${formatUhrzeit(e.beginnMin)} · noch nicht '
+                'ausgestempelt';
+          } else {
+            mitte = '${formatUhrzeit(e.beginnMin)}–${formatUhrzeit(e.endeMin)}'
+                '${blockAnzahl >= 2 ? ' · $blockAnzahl Blöcke' : ''}'
+                '${e.pauseMin > 0 ? ' · ${e.pauseMin} min Pause' : ''}'
+                '${zeile.ort.isNotEmpty ? ' · ${zeile.ort}' : ''}';
+          }
         default:
           mitte = tagesartLabel[e.tagesart] ?? '';
           if (e.tagesart == Tagesart.feiertag && zeile.feiertagsname != null) {
@@ -489,51 +621,69 @@ class _TagZeile extends StatelessWidget {
           child: Row(
             children: [
               SizedBox(
-                width: 52,
-                child: Text(
-                  zeile.tagLabel,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: istHeute ? FontWeight.bold : null,
-                    color: zeile.istWochenende || istFeiertag
-                        ? theme.colorScheme.error
-                        : null,
-                  ),
+                width: _kBreiteTag,
+                child: Row(
+                  children: [
+                    if (istHeute)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Icon(Icons.circle,
+                            size: 8, color: theme.colorScheme.primary),
+                      ),
+                    Flexible(
+                      child: Text(
+                        zeile.tagLabel,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: istHeute ? FontWeight.bold : null,
+                          color: zeile.istWochenende || istFeiertag
+                              ? theme.colorScheme.error
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
                 child: Text(
                   mitte,
-                  style: theme.textTheme.bodySmall,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      color: offenerBlock ? theme.colorScheme.error : null),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (erg != null) ...[
-                SizedBox(
-                  width: 76,
-                  child: Text(
-                    '${formatStunden(erg.ist)} / ${formatStunden(erg.soll)}',
+              SizedBox(
+                width: _kBreiteIst,
+                child: Text(erg == null ? '' : formatStunden(erg.ist),
                     textAlign: TextAlign.right,
-                    style: theme.textTheme.bodySmall,
+                    style: theme.textTheme.bodySmall),
+              ),
+              SizedBox(
+                width: _kBreiteSoll,
+                child: Text(erg == null ? '' : formatStunden(erg.soll),
+                    textAlign: TextAlign.right,
+                    style: theme.textTheme.bodySmall),
+              ),
+              SizedBox(
+                width: _kBreitePlus,
+                child: Text(
+                  erg == null
+                      ? ''
+                      : formatStunden(erg.ueberstunden, vorzeichen: true),
+                  textAlign: TextAlign.right,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: erg == null
+                        ? null
+                        : (erg.ueberstunden < 0
+                            ? theme.colorScheme.error
+                            : (erg.ueberstunden > 0
+                                ? Colors.green.shade700
+                                : null)),
                   ),
                 ),
-                SizedBox(
-                  width: 56,
-                  child: Text(
-                    formatStunden(erg.ueberstunden, vorzeichen: true),
-                    textAlign: TextAlign.right,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: erg.ueberstunden < 0
-                          ? theme.colorScheme.error
-                          : (erg.ueberstunden > 0
-                              ? Colors.green.shade700
-                              : null),
-                    ),
-                  ),
-                ),
-              ] else
-                const SizedBox(width: 132),
+              ),
             ],
           ),
         ),

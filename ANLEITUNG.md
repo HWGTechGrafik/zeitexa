@@ -99,8 +99,9 @@ Nach dem Start sehen Sie den aktuellen Monat:
 - **Übersichtskarte** oben:
   - **„Zeit – aktueller Monat":** Ist-Stunden, Soll-Stunden und Überstunden (grün = Plus, rot = Minus).
   - **„Konten"** mit Umschalter **Monat / Laufzeit**: Resturlaub in Tagen (bei getrennter Führung zwei Werte: „Resturlaub Mo–Do" und „Resturlaub Fr"), **Zeitausgleich** in Stunden (Plus oder Minus) und **Kranktage**. „Monat" zeigt nur den angezeigten Monat, „Laufzeit" den Gesamtstand.
-- **Tagesliste:** eine Zeile pro Tag. Wochenenden und Feiertage sind farbig hervorgehoben, der heutige Tag ist markiert. Jede Zeile zeigt die Uhrzeiten, Pause und Ort (bzw. die Tagesart wie „Urlaub"), eine eventuelle Notiz sowie Ist/Soll und Überstunden des Tages.
-- **Pfeile** links/rechts oben wechseln den Monat.
+- **Spaltenköpfe:** Direkt über der Liste steht fest, welche Zahl was bedeutet: **Tag · Zeiten · Ist · Soll · ±** (± = Differenz Ist minus Soll, grün Plus / rot Minus).
+- **Tagesliste:** eine Zeile pro Tag. Wochenenden und Feiertage sind farbig hervorgehoben, der heutige Tag ist farbig hinterlegt und mit einem Punkt markiert – beim Öffnen rollt die Liste automatisch dorthin. Jede Zeile zeigt die Uhrzeiten, Pause und Ort (bzw. die Tagesart wie „Urlaub"), eine eventuelle Notiz sowie Ist, Soll und die Differenz. Wurde an einem Tag **mehrmals gestempelt**, steht dort z. B. „07:00–17:30 · 2 Blöcke · 45 min Pause".
+- **Monat wählen:** Oben links auf den **Monatsnamen** tippen öffnet eine Liste zum direkten Anspringen. Das **Kalender-Symbol** daneben öffnet einen (deutschen) Kalender zum Springen in einen beliebigen Monat. Die **Pfeile** rechts wechseln zum Nachbarmonat.
 - **„Heute"-Knopf:** springt zurück zum aktuellen Monat und rollt die Liste zum heutigen Tag. Je nach Einstellung (Abschnitt 4.2) öffnet er zusätzlich gleich den heutigen Tageseintrag.
 
 ### 3.2 Einen Tag eintragen
@@ -111,7 +112,8 @@ Einfach die gewünschte Tageszeile **antippen** – es öffnet sich der Tagesein
 2. Bei **Arbeit**:
    - **Ort** eintragen (z. B. die Baustelle). Zuletzt verwendete Orte erscheinen als Schnellauswahl zum Antippen.
    - **Beginn** und **Ende** über die Uhr einstellen. Mit **„Jetzt Beginn"** bzw. **„Jetzt Ende"** übernimmt die App die aktuelle Uhrzeit mit einem Tipp – praktisch, wenn man direkt beim Kommen oder Gehen stempelt.
-   - **Pause** über die runde Pausen-Uhr einstellen (in 5-Minuten-Schritten).
+   - **Mehrmals am Tag stempeln:** Mit **„Block hinzufügen"** lassen sich beliebig viele Zeitblöcke am selben Tag erfassen (z. B. Vormittag, Nachmittag, Abend). Bei mehreren Blöcken zählen die **Lücken automatisch als Pause** – das Pausenfeld entfällt dann. Wer nur einstempelt und das Ende offen lässt, sieht den Tag in der Liste als „läuft seit … · noch nicht ausgestempelt"; er zählt 0 Stunden, bis das Ende nachgetragen wird.
+   - **Pause** (bei nur einem Block) über die runde Pausen-Uhr einstellen (in 5-Minuten-Schritten).
    - Beginn, Ende und Pause sind mit Ihren Standardzeiten vorbelegt – meist muss man gar nichts ändern. Ist Ihr **Freitag kürzer** und sind eigene Freitagszeiten hinterlegt, verwendet die App am Freitag automatisch diese.
 3. Bei allen anderen Tagesarten kann man über **„bis-Datum wählen"** gleich einen ganzen Zeitraum eintragen (z. B. zwei Wochen Urlaub) – Samstage und Sonntage werden automatisch übersprungen.
 4. **Halbe und geteilte Urlaubstage:** Bei einem einzelnen Urlaubs-, Sonderurlaubs- oder Zusatzurlaubstag steht im Feld **„… (Stunden an diesem Tag)"** zunächst Ihr volles Tagessoll. Tragen Sie **weniger** ein (z. B. **6,25**), erscheinen darunter zusätzlich Ort, Beginn, Ende und Pause – so lässt sich ein Tag sauber aufteilen: ein Teil Urlaub, der Rest gearbeitet. Ein halber Tag ist also einfach die halbe Stundenzahl. Das Urlaubskonto wird entsprechend anteilig belastet.
@@ -141,7 +143,8 @@ Hier stehen alle Werte, mit denen Zeitexa rechnet:
 
 - **Ihr Name (aus der Lizenz):** wird nur angezeigt – er ist an die Lizenz gebunden und lässt sich nur über eine neue Lizenzdatei des Entwicklers ändern. Dazu Ihre **E-Mail-Adresse** (für die eigene Kopie beim Mail-Export).
 - **Briefkopf der Berichte:** Adresse, Telefon und E-Mail, die unter Ihrem Namen im Kopf der PDF-Berichte erscheinen. Leere Felder werden weggelassen.
-- **Sollstunden:** entweder gleich für alle Tage (Mo–Fr) oder **Mo–Do und Freitag getrennt**.
+- **Sollstunden:** drei Möglichkeiten – gleich für alle Tage (Mo–Fr), **Mo–Do und Freitag getrennt**, oder **Pro Wochentag** (jeder Tag Mo–So einzeln). Der letzte Modus eignet sich z. B. für eine 25-Stunden-Woche oder einen freien Mittwoch; darunter wird die **Wochensumme** laufend angezeigt, damit man sofort sieht, ob es aufgeht.
+- **Automatische Pause:** Optional (standardmäßig aus). Eingeschaltet muss die Pause ab einer einstellbaren Anwesenheit (Vorschlag 12 Stunden) mindestens eine einstellbare Dauer (Vorschlag 60 Minuten) betragen. Eine bereits erfasste oder aus Blocklücken errechnete Pause wird dabei nur **aufgefüllt**, nie doppelt abgezogen.
 - **Anfangsstand:** Der **Stichtag** ist der Tag, ab dem Zeitexa mitrechnet. Tragen Sie hier ein, wie viel Resturlaub und wie viele Plus-/Minusstunden Sie an diesem Tag hatten – alles Weitere schreibt die App selbst fort.
   - **„Freitags-Urlaub getrennt führen":** eigenes Urlaubskonto für Freitage.
   - **„Zusatzurlaub führen":** eigenes Konto für zusätzlichen Urlaub (z. B. eine Extra-Woche). Verfällt nicht; den Stand erhöhen Sie jährlich selbst.

@@ -143,6 +143,12 @@ class _ProfilTabState extends ConsumerState<_ProfilTab> {
   final _sollTag = TextEditingController();
   final _sollMoDo = TextEditingController();
   final _sollFr = TextEditingController();
+  // Sollstunden je Wochentag (Modus „Pro Wochentag"): Mo … So.
+  final _sollWochentag =
+      List.generate(7, (_) => TextEditingController(), growable: false);
+  // Automatische Pausenregel.
+  final _pausenSchwelleStd = TextEditingController(text: '12');
+  final _pausenMindestMin = TextEditingController(text: '60');
   final _urlaubAnfangsstand = TextEditingController();
   final _urlaubFrAnfangsstand = TextEditingController();
   final _firmenurlaubAnfangsstand = TextEditingController();
@@ -151,6 +157,7 @@ class _ProfilTabState extends ConsumerState<_ProfilTab> {
   User? _user;
   UserSetting? _settings;
   var _modus = SollModus.moDoFrGetrennt;
+  var _pausenAktiv = false;
   var _urlaubFrGetrennt = false;
   var _firmenurlaubAktiv = false;
   var _zaNegativ = false;
@@ -180,6 +187,9 @@ class _ProfilTabState extends ConsumerState<_ProfilTab> {
       _sollTag,
       _sollMoDo,
       _sollFr,
+      ..._sollWochentag,
+      _pausenSchwelleStd,
+      _pausenMindestMin,
       _urlaubAnfangsstand,
       _urlaubFrAnfangsstand,
       _firmenurlaubAnfangsstand,
@@ -208,6 +218,21 @@ class _ProfilTabState extends ConsumerState<_ProfilTab> {
       _sollTag.text = formatStunden(s.sollStundenTag);
       _sollMoDo.text = formatStunden(s.sollStundenMoDo);
       _sollFr.text = formatStunden(s.sollStundenFr);
+      final proTag = [
+        s.sollStundenMo,
+        s.sollStundenDi,
+        s.sollStundenMi,
+        s.sollStundenDo,
+        s.sollStundenFrTag,
+        s.sollStundenSa,
+        s.sollStundenSo,
+      ];
+      for (var i = 0; i < 7; i++) {
+        _sollWochentag[i].text = formatStunden(proTag[i]);
+      }
+      _pausenAktiv = s.pausenregelAktiv;
+      _pausenSchwelleStd.text = formatStunden(s.pausenSchwelleMin / 60.0);
+      _pausenMindestMin.text = '${s.pausenMindestMin}';
       _urlaubAnfangsstand.text = formatStunden(s.anfangsstandUrlaubTage);
       _urlaubFrAnfangsstand.text = formatStunden(s.anfangsstandUrlaubFrTage);
       _firmenurlaubAnfangsstand.text =
@@ -238,12 +263,24 @@ class _ProfilTabState extends ConsumerState<_ProfilTab> {
     final db = ref.read(dbProvider);
     double lese(TextEditingController c, double fallback) =>
         double.tryParse(c.text.replaceAll(',', '.')) ?? fallback;
+    final schwelleMin = (lese(_pausenSchwelleStd, 12) * 60).round();
+    final mindestMin = int.tryParse(_pausenMindestMin.text.trim()) ?? 60;
     await (db.update(db.userSettings)..where((t) => t.userId.equals(user.id)))
         .write(UserSettingsCompanion(
       sollModus: Value(_modus),
       sollStundenTag: Value(lese(_sollTag, 8)),
       sollStundenMoDo: Value(lese(_sollMoDo, 8)),
       sollStundenFr: Value(lese(_sollFr, 5)),
+      sollStundenMo: Value(lese(_sollWochentag[0], 8)),
+      sollStundenDi: Value(lese(_sollWochentag[1], 8)),
+      sollStundenMi: Value(lese(_sollWochentag[2], 8)),
+      sollStundenDo: Value(lese(_sollWochentag[3], 8)),
+      sollStundenFrTag: Value(lese(_sollWochentag[4], 8)),
+      sollStundenSa: Value(lese(_sollWochentag[5], 0)),
+      sollStundenSo: Value(lese(_sollWochentag[6], 0)),
+      pausenregelAktiv: Value(_pausenAktiv),
+      pausenSchwelleMin: Value(schwelleMin < 1 ? 1 : schwelleMin),
+      pausenMindestMin: Value(mindestMin < 0 ? 0 : mindestMin),
       standardBeginnMin:
           Value(_standardBeginn.hour * 60 + _standardBeginn.minute),
       standardEndeMin: Value(_standardEnde.hour * 60 + _standardEnde.minute),
@@ -335,7 +372,45 @@ class _ProfilTabState extends ConsumerState<_ProfilTab> {
           sollTag: _sollTag,
           sollMoDo: _sollMoDo,
           sollFr: _sollFr,
+          sollWochentag: _sollWochentag,
+          onWochentagGeaendert: () => setState(() {}),
         ),
+        const Divider(height: 32),
+        Text('Automatische Pause', style: Theme.of(context).textTheme.titleSmall),
+        SwitchListTile(
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Mindestpause bei langen Tagen'),
+          subtitle: const Text(
+              'Ab einer bestimmten Anwesenheit wird die Pause auf einen '
+              'Mindestwert aufgefüllt (kein Doppelabzug einer schon '
+              'erfassten Pause).'),
+          value: _pausenAktiv,
+          onChanged: (v) => setState(() => _pausenAktiv = v),
+        ),
+        if (_pausenAktiv)
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _pausenSchwelleStd,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      labelText: 'ab Anwesenheit', suffixText: 'h'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: _pausenMindestMin,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                      labelText: 'mindestens', suffixText: 'min'),
+                ),
+              ),
+            ],
+          ),
         const Divider(height: 32),
         Text('Anfangsstand', style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 4),
@@ -446,13 +521,32 @@ class _SollFelder extends StatelessWidget {
   final TextEditingController sollMoDo;
   final TextEditingController sollFr;
 
+  /// Sollstunden je Wochentag Mo … So (Modus „Pro Wochentag").
+  final List<TextEditingController> sollWochentag;
+
+  /// Neu rechnen, wenn sich ein Wochentagswert ändert (für die Wochensumme).
+  final VoidCallback onWochentagGeaendert;
+
   const _SollFelder({
     required this.modus,
     required this.onModus,
     required this.sollTag,
     required this.sollMoDo,
     required this.sollFr,
+    required this.sollWochentag,
+    required this.onWochentagGeaendert,
   });
+
+  static const _tage = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag',
+      'Freitag', 'Samstag', 'Sonntag'];
+
+  double _wochensumme() {
+    var summe = 0.0;
+    for (final c in sollWochentag) {
+      summe += double.tryParse(c.text.replaceAll(',', '.')) ?? 0;
+    }
+    return summe;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -477,6 +571,12 @@ class _SollFelder extends StatelessWidget {
                 title: Text('Mo–Do und Freitag getrennt'),
                 value: SollModus.moDoFrGetrennt,
               ),
+              RadioListTile<SollModus>(
+                dense: true,
+                title: Text('Pro Wochentag (jeder Tag einzeln)'),
+                subtitle: Text('z.B. 25-Stunden-Woche oder freier Mittwoch'),
+                value: SollModus.proWochentag,
+              ),
             ],
           ),
         ),
@@ -488,7 +588,7 @@ class _SollFelder extends StatelessWidget {
               decoration: const InputDecoration(
                   labelText: 'Stunden pro Tag (Mo–Fr)',
                   helperText: 'Halbe Stunden z.B. als 8,5'))
-        else ...[
+        else if (modus == SollModus.moDoFrGetrennt) ...[
           TextField(
               controller: sollMoDo,
               keyboardType:
@@ -499,6 +599,31 @@ class _SollFelder extends StatelessWidget {
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(labelText: 'Stunden Freitag')),
+        ] else ...[
+          for (var i = 0; i < 7; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  SizedBox(width: 96, child: Text(_tage[i])),
+                  Expanded(
+                    child: TextField(
+                      controller: sollWochentag[i],
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true),
+                      decoration:
+                          const InputDecoration(isDense: true, suffixText: 'h'),
+                      onChanged: (_) => onWochentagGeaendert(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text('Wochensumme: ${formatStunden(_wochensumme())} h',
+                style: Theme.of(context).textTheme.labelMedium),
+          ),
         ],
       ],
     );

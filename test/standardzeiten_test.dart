@@ -19,6 +19,13 @@ void main() {
         sollStundenTag: 8,
         sollStundenMoDo: 8,
         sollStundenFr: 5,
+        sollStundenMo: 8,
+        sollStundenDi: 8,
+        sollStundenMi: 8,
+        sollStundenDo: 8,
+        sollStundenFrTag: 8,
+        sollStundenSa: 0,
+        sollStundenSo: 0,
         standardBeginnMin: 7 * 60,
         standardEndeMin: 16 * 60,
         standardPauseMin: 30,
@@ -31,6 +38,9 @@ void main() {
         anfangsstandUrlaubFrTage: 0,
         firmenurlaubAktiv: false,
         anfangsstandFirmenurlaubTage: 0,
+        pausenregelAktiv: false,
+        pausenSchwelleMin: 12 * 60,
+        pausenMindestMin: 60,
       );
 
   group('standardzeitenFuer', () {

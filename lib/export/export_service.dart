@@ -18,6 +18,31 @@ import 'pdf_export.dart';
 /// {Mitarbeiter} {Monat} {Jahr} {Firma} {Zeitraum}.
 const kBetreffVorlageStandard = 'Zeiterfassung – {Mitarbeiter} – {Monat} {Jahr}';
 
+/// Baut die reine [SollRegel] (inkl. Wochentags-Soll und Pausenregel) aus
+/// den gespeicherten Benutzereinstellungen. Die EINE Stelle, an der aus
+/// [UserSetting] eine Rechenregel wird – damit erben alle Aufrufer (Konten,
+/// Auswertung, Export, Eintragsdialog) automatisch dieselben Werte.
+SollRegel sollRegelAus(UserSetting s) => SollRegel(
+      modus: s.sollModus,
+      stundenTag: s.sollStundenTag,
+      stundenMoDo: s.sollStundenMoDo,
+      stundenFr: s.sollStundenFr,
+      proWochentag: [
+        s.sollStundenMo,
+        s.sollStundenDi,
+        s.sollStundenMi,
+        s.sollStundenDo,
+        s.sollStundenFrTag,
+        s.sollStundenSa,
+        s.sollStundenSo,
+      ],
+      pausenregel: Pausenregel(
+        aktiv: s.pausenregelAktiv,
+        schwelleMin: s.pausenSchwelleMin,
+        mindestMin: s.pausenMindestMin,
+      ),
+    );
+
 class ExportDateien {
   final String basisname; // Zeitexa_<Benutzer>_<JJJJ-MM>
   final String betreff;
@@ -48,12 +73,7 @@ class ExportService {
 
   Future<SollRegel> regelFuer(int userId) async {
     final s = await db.settingsFor(userId);
-    return SollRegel(
-      modus: s.sollModus,
-      stundenTag: s.sollStundenTag,
-      stundenMoDo: s.sollStundenMoDo,
-      stundenFr: s.sollStundenFr,
-    );
+    return sollRegelAus(s);
   }
 
   /// Erzeugt alle drei Exportdateien für einen Monat.

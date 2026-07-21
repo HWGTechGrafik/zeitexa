@@ -33,12 +33,18 @@ enum SonderurlaubGrund {
 }
 
 /// Modus für die Sollstunden eines Mitarbeiters.
+///
+/// Wie [Tagesart] als Index gespeichert – neue Modi nur HINTEN anhängen.
 enum SollModus {
   /// Ein genereller Stundensatz für Mo–Fr.
   gleich,
 
   /// Mo–Do und Freitag getrennt (z.B. Fr nur halber Tag).
   moDoFrGetrennt,
+
+  /// Jeder Wochentag Mo–So einzeln (z.B. 25-Stunden-Woche mit freiem
+  /// Mittwoch). Nutzt [UserSettings.sollStundenMo] … [sollStundenSo].
+  proWochentag,
 }
 
 class Users extends Table {
@@ -62,6 +68,35 @@ class UserSettings extends Table {
   RealColumn get sollStundenTag => real().withDefault(const Constant(8.0))();
   RealColumn get sollStundenMoDo => real().withDefault(const Constant(8.0))();
   RealColumn get sollStundenFr => real().withDefault(const Constant(5.0))();
+
+  /// Sollstunden je Wochentag – nur relevant im Modus
+  /// [SollModus.proWochentag]. Standard: Mo–Fr 8 h, Sa/So 0 h. So kann z.B.
+  /// eine 25-Stunden-Woche mit freiem Mittwoch tagesgenau hinterlegt werden.
+  RealColumn get sollStundenMo => real().withDefault(const Constant(8.0))();
+  RealColumn get sollStundenDi => real().withDefault(const Constant(8.0))();
+  RealColumn get sollStundenMi => real().withDefault(const Constant(8.0))();
+  RealColumn get sollStundenDo => real().withDefault(const Constant(8.0))();
+  RealColumn get sollStundenFrTag => real().withDefault(const Constant(8.0))();
+  RealColumn get sollStundenSa => real().withDefault(const Constant(0.0))();
+  RealColumn get sollStundenSo => real().withDefault(const Constant(0.0))();
+
+  /// Standardzeiten je Wochentag als JSON (Vorbelegung neuer Einträge im
+  /// Modus [SollModus.proWochentag]). Aufbau: `{"1":{"b":420,"e":960,"p":30},
+  /// …}` mit Wochentag 1=Mo … 7=So und Minuten seit Mitternacht. Fehlt ein
+  /// Wochentag oder ein Feld, gilt der allgemeine Standard. `null` = für alle
+  /// Tage der allgemeine Standard (Abwärtskompatibilität).
+  TextColumn get standardZeitenProTag => text().nullable()();
+
+  /// Automatische Pausenregel: Ab [pausenSchwelleMin] Minuten Anwesenheit
+  /// muss die Pause mindestens [pausenMindestMin] Minuten betragen; eine
+  /// zu kurze (oder aus Blocklücken errechnete) Pause wird nur AUFGEFÜLLT,
+  /// nie doppelt abgezogen. Standard aus, Vorschlagswerte 12 h / 60 min.
+  BoolColumn get pausenregelAktiv =>
+      boolean().withDefault(const Constant(false))();
+  IntColumn get pausenSchwelleMin =>
+      integer().withDefault(const Constant(12 * 60))();
+  IntColumn get pausenMindestMin =>
+      integer().withDefault(const Constant(60))();
 
   /// Vorbelegung für neue Arbeits-Einträge (Minuten seit Mitternacht bzw.
   /// Pausendauer in Minuten). Vom Chef bei der Anlage gesetzt, danach vom
@@ -147,6 +182,30 @@ class TimeEntries extends Table {
   List<Set<Column>> get uniqueKeys => [
         {userId, datum},
       ];
+}
+
+/// Einzelne Stempel-Blöcke eines Tages (mehrmaliges An-/Abstempeln).
+///
+/// Ein Tag ([TimeEntries]) mit GENAU EINEM Arbeitsblock speichert seine
+/// Zeit weiterhin nur in den flachen Feldern `beginnMin/endeMin/pauseMin`
+/// und hat KEINE Zeilen hier – so bleibt der Alltagsfall und alle
+/// Bestandsdaten unverändert. Erst ab ZWEI Blöcken werden sie hier abgelegt;
+/// die flachen Felder des Tages tragen dann die Klammer (erster Beginn,
+/// letztes Ende) und in `pauseMin` stecken die Lücken zwischen den Blöcken,
+/// damit die Ist-Stunden-Berechnung (lib/logic/berechnung.dart) unverändert
+/// weiterrechnen kann. Diese Tabelle dient also nur der Rekonstruktion im
+/// Eintragsdialog und der Anzeige „N Blöcke".
+@DataClassName('Zeitblock')
+class Zeitbloecke extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get eintragId =>
+      integer().references(TimeEntries, #id, onDelete: KeyAction.cascade)();
+
+  /// Minuten seit Mitternacht.
+  IntColumn get beginnMin => integer()();
+
+  /// `null` = offener Block (noch nicht ausgestempelt).
+  IntColumn get endeMin => integer().nullable()();
 }
 
 class Places extends Table {
@@ -285,6 +344,7 @@ abstract class SettingsKeys {
   Users,
   UserSettings,
   TimeEntries,
+  Zeitbloecke,
   Places,
   AppSettings,
   Brandings,
@@ -303,7 +363,7 @@ class ZeitexaDb extends _$ZeitexaDb {
   ZeitexaDb.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -355,6 +415,24 @@ class ZeitexaDb extends _$ZeitexaDb {
             // und lässt sich in SQL nicht korrekt auflösen. Der Lesepfad
             // versteht beide Formate, siehe urlaubAnteil() in
             // lib/logic/berechnung.dart.
+          }
+          if (from < 5) {
+            // Wochentags-Soll + Pausenregel + per-Wochentag-Standardzeiten.
+            await m.addColumn(userSettings, userSettings.sollStundenMo);
+            await m.addColumn(userSettings, userSettings.sollStundenDi);
+            await m.addColumn(userSettings, userSettings.sollStundenMi);
+            await m.addColumn(userSettings, userSettings.sollStundenDo);
+            await m.addColumn(userSettings, userSettings.sollStundenFrTag);
+            await m.addColumn(userSettings, userSettings.sollStundenSa);
+            await m.addColumn(userSettings, userSettings.sollStundenSo);
+            await m.addColumn(userSettings, userSettings.standardZeitenProTag);
+            await m.addColumn(userSettings, userSettings.pausenregelAktiv);
+            await m.addColumn(userSettings, userSettings.pausenSchwelleMin);
+            await m.addColumn(userSettings, userSettings.pausenMindestMin);
+            // Neue Tabelle für mehrfaches An-/Abstempeln. Bestandstage haben
+            // genau einen Block und bleiben in den flachen Feldern – daher
+            // KEINE Rückfüllung nötig.
+            await m.createTable(zeitbloecke);
           }
         },
       );
@@ -465,11 +543,75 @@ class ZeitexaDb extends _$ZeitexaDb {
             target: [timeEntries.userId, timeEntries.datum],
           ));
 
-  Future<void> deleteEntry(int userId, DateTime datum) =>
-      (delete(timeEntries)
-            ..where((t) =>
-                t.userId.equals(userId) & t.datum.equals(datum)))
+  Future<void> deleteEntry(int userId, DateTime datum) async {
+    await transaction(() async {
+      final id = await eintragId(userId, datum);
+      if (id != null) {
+        await (delete(zeitbloecke)..where((t) => t.eintragId.equals(id))).go();
+      }
+      await (delete(timeEntries)
+            ..where((t) => t.userId.equals(userId) & t.datum.equals(datum)))
           .go();
+    });
+  }
+
+  // ---------- Zeitblöcke (mehrfaches An-/Abstempeln) ----------
+
+  /// Id des Tageskopfs für (Benutzer, Datum), oder null.
+  Future<int?> eintragId(int userId, DateTime datum) async {
+    final row = await (select(timeEntries)
+          ..where((t) => t.userId.equals(userId) & t.datum.equals(datum)))
+        .getSingleOrNull();
+    return row?.id;
+  }
+
+  /// Blöcke eines Tages, aufsteigend nach Beginn.
+  Future<List<Zeitblock>> bloeckeFuer(int eintragId) =>
+      (select(zeitbloecke)
+            ..where((t) => t.eintragId.equals(eintragId))
+            ..orderBy([(t) => OrderingTerm.asc(t.beginnMin)]))
+          .get();
+
+  /// Ersetzt die Blöcke eines Tages vollständig. Eine leere oder
+  /// einelementige Liste bedeutet „ein Block" – dann bleibt der Tag in den
+  /// flachen Feldern und es werden KEINE Zeilen gespeichert (siehe
+  /// [Zeitbloecke]).
+  Future<void> setzeBloecke(
+      int eintragId, List<({int beginnMin, int? endeMin})> bloecke) async {
+    await transaction(() async {
+      await (delete(zeitbloecke)..where((t) => t.eintragId.equals(eintragId)))
+          .go();
+      if (bloecke.length < 2) return;
+      await batch((b) => b.insertAll(zeitbloecke, [
+            for (final blk in bloecke)
+              ZeitbloeckeCompanion.insert(
+                  eintragId: eintragId,
+                  beginnMin: blk.beginnMin,
+                  endeMin: Value(blk.endeMin)),
+          ]));
+    });
+  }
+
+  /// Anzahl der Blöcke je Tageskopf für einen Monat (nur Tage mit ≥2
+  /// Blöcken tauchen auf). Für die Anzeige „· N Blöcke" in der Monatsliste.
+  Stream<Map<int, int>> watchBlockAnzahlFuerMonat(
+      int userId, int jahr, int monat) {
+    final von = DateTime(jahr, monat, 1);
+    final bis = DateTime(jahr, monat + 1, 1);
+    final anzahl = zeitbloecke.id.count();
+    final query = selectOnly(zeitbloecke).join([
+      innerJoin(timeEntries, timeEntries.id.equalsExp(zeitbloecke.eintragId)),
+    ])
+      ..addColumns([zeitbloecke.eintragId, anzahl])
+      ..where(timeEntries.userId.equals(userId) &
+          timeEntries.datum.isBiggerOrEqualValue(von) &
+          timeEntries.datum.isSmallerThanValue(bis))
+      ..groupBy([zeitbloecke.eintragId]);
+    return query.watch().map((rows) => {
+          for (final r in rows)
+            r.read(zeitbloecke.eintragId)!: r.read(anzahl)!,
+        });
+  }
 
   /// Alle Einträge eines Benutzers (für die Konten-Berechnung, siehe
   /// lib/logic/konten.dart).

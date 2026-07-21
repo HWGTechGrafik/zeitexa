@@ -26,6 +26,7 @@ const List<String> _einspielReihenfolge = [
   'places',
   'user_settings',
   'time_entries',
+  'zeitbloecke',
   'app_settings',
   'brandings',
   'imported_entries',

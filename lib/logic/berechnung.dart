@@ -7,6 +7,24 @@ library;
 
 import '../data/database.dart' show SollModus, Tagesart;
 
+/// Automatische Pausenregel: Ab [schwelleMin] Minuten Anwesenheit
+/// (Ende − Beginn) muss die Pause mindestens [mindestMin] Minuten betragen.
+/// Eine bereits erfasste (oder aus Blocklücken errechnete) Pause wird nur
+/// AUFGEFÜLLT, nie doppelt abgezogen. Standard: aus.
+class Pausenregel {
+  final bool aktiv;
+  final int schwelleMin;
+  final int mindestMin;
+
+  const Pausenregel({
+    this.aktiv = false,
+    this.schwelleMin = 12 * 60,
+    this.mindestMin = 60,
+  });
+
+  static const aus = Pausenregel();
+}
+
 /// Sollstunden-Einstellungen eines Mitarbeiters.
 class SollRegel {
   final SollModus modus;
@@ -14,15 +32,28 @@ class SollRegel {
   final double stundenMoDo;
   final double stundenFr;
 
+  /// Nur im Modus [SollModus.proWochentag]: Sollstunden je Wochentag,
+  /// Index 0 = Montag … 6 = Sonntag.
+  final List<double> proWochentag;
+
+  /// Automatische Pausenregel; wird in [istStunden] angewandt.
+  final Pausenregel pausenregel;
+
   const SollRegel({
     required this.modus,
     required this.stundenTag,
     required this.stundenMoDo,
     required this.stundenFr,
+    this.proWochentag = const [8, 8, 8, 8, 8, 0, 0],
+    this.pausenregel = Pausenregel.aus,
   });
 
-  /// Sollstunden für ein Datum: Sa/So = 0, sonst je nach Modus.
+  /// Sollstunden für ein Datum. In den alten Modi Sa/So = 0; im Modus
+  /// „pro Wochentag" gilt strikt der hinterlegte Tageswert (auch Sa/So).
   double sollFuer(DateTime datum) {
+    if (modus == SollModus.proWochentag) {
+      return proWochentag[datum.weekday - 1];
+    }
     switch (datum.weekday) {
       case DateTime.saturday || DateTime.sunday:
         return 0;
@@ -105,12 +136,13 @@ class TagErgebnis {
 /// - Frei (kein Eintrag): Ist = 0, Überstunden = −Soll (an Sa/So 0)
 TagErgebnis berechneTag(TagDaten tag, SollRegel regel) {
   final soll = regel.sollFuer(tag.datum);
+  final pause = regel.pausenregel;
   switch (tag.tagesart) {
     case Tagesart.arbeit:
-      final ist = istStunden(tag);
+      final ist = istStunden(tag, pause: pause);
       return TagErgebnis(ist: ist, soll: soll, ueberstunden: ist - soll);
     case Tagesart.urlaub || Tagesart.sonderurlaub || Tagesart.firmenurlaub:
-      final ist = urlaubAnteil(tag, soll) + istStunden(tag);
+      final ist = urlaubAnteil(tag, soll) + istStunden(tag, pause: pause);
       return TagErgebnis(ist: ist, soll: soll, ueberstunden: ist - soll);
     case Tagesart.krank || Tagesart.feiertag:
       return TagErgebnis(ist: soll, soll: soll, ueberstunden: 0);
@@ -130,6 +162,7 @@ TagErgebnis berechneMitSoll({
   required int? endeMin,
   required double soll,
   int? urlaubMinuten,
+  Pausenregel pausenregel = Pausenregel.aus,
 }) {
   final tag = TagDaten(
     datum: DateTime(2000),
@@ -141,10 +174,10 @@ TagErgebnis berechneMitSoll({
   );
   switch (tagesart) {
     case Tagesart.arbeit:
-      final ist = istStunden(tag);
+      final ist = istStunden(tag, pause: pausenregel);
       return TagErgebnis(ist: ist, soll: soll, ueberstunden: ist - soll);
     case Tagesart.urlaub || Tagesart.sonderurlaub || Tagesart.firmenurlaub:
-      final ist = urlaubAnteil(tag, soll) + istStunden(tag);
+      final ist = urlaubAnteil(tag, soll) + istStunden(tag, pause: pausenregel);
       return TagErgebnis(ist: ist, soll: soll, ueberstunden: ist - soll);
     case Tagesart.krank || Tagesart.feiertag:
       return TagErgebnis(ist: soll, soll: soll, ueberstunden: 0);
@@ -153,12 +186,24 @@ TagErgebnis berechneMitSoll({
   }
 }
 
-/// Geleistete Stunden aus Beginn/Pause/Ende; 0 wenn unvollständig.
-double istStunden(TagDaten tag) {
+/// Geleistete Stunden aus Beginn/Pause/Ende; 0 wenn unvollständig oder der
+/// Block noch offen ist (kein Ende erfasst).
+///
+/// Bei mehreren Stempel-Blöcken steckt die Summe der Lücken bereits in
+/// [TagDaten.pauseMin] (siehe Speicherpfad im Eintragsdialog), daher genügt
+/// hier weiterhin Ende − Beginn − Pause. Ist eine [Pausenregel] aktiv und
+/// die Anwesenheit erreicht die Schwelle, wird die Pause auf die
+/// Mindestpause AUFGEFÜLLT (kein Doppelabzug).
+double istStunden(TagDaten tag, {Pausenregel pause = Pausenregel.aus}) {
   final beginn = tag.beginnMin;
   final ende = tag.endeMin;
   if (beginn == null || ende == null || ende <= beginn) return 0;
-  final minuten = (ende - beginn) - tag.pauseMin;
+  final anwesenheit = ende - beginn;
+  var pauseMin = tag.pauseMin;
+  if (pause.aktiv && anwesenheit >= pause.schwelleMin) {
+    if (pauseMin < pause.mindestMin) pauseMin = pause.mindestMin;
+  }
+  final minuten = anwesenheit - pauseMin;
   return minuten <= 0 ? 0 : minuten / 60.0;
 }
 
