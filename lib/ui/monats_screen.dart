@@ -487,10 +487,21 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
                     settings.anfangsstandFirmenurlaubTage,
               );
               _vielleichtZuHeuteScrollen(heute);
+              final istAktuellerMonat =
+                  _jahr == heute.year && _monat == heute.month;
+              final heuteZeile = istAktuellerMonat
+                  ? zeilen.where((z) => z.datum.day == heute.day).firstOrNull
+                  : null;
               return Column(children: [
                 _UebersichtKarte(
                     summe: summe,
                     konten: konten,
+                    regel: regel,
+                    heuteZeile: heuteZeile,
+                    onHeuteTap: heuteZeile == null
+                        ? null
+                        : () => _oeffneEintrag(
+                            heuteZeile.datum, heuteZeile.eintrag),
                     urlaubFrGetrennt: settings.urlaubFrGetrennt,
                     firmenurlaubAktiv: settings.firmenurlaubAktiv),
                 const _SpaltenKopf(),
@@ -708,11 +719,19 @@ class _TagZeile extends StatelessWidget {
 class _UebersichtKarte extends StatefulWidget {
   final MonatsSumme summe;
   final KontenStand konten;
+  final SollRegel regel;
+
+  /// Zeile des heutigen Tages – nur im laufenden Monat gesetzt.
+  final MonatsZeile? heuteZeile;
+  final VoidCallback? onHeuteTap;
   final bool urlaubFrGetrennt;
   final bool firmenurlaubAktiv;
   const _UebersichtKarte(
       {required this.summe,
       required this.konten,
+      required this.regel,
+      this.heuteZeile,
+      this.onHeuteTap,
       this.urlaubFrGetrennt = false,
       this.firmenurlaubAktiv = false});
 
@@ -757,7 +776,15 @@ class _UebersichtKarteState extends State<_UebersichtKarte> {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
-      child: IntrinsicHeight(
+      child: Column(children: [
+        if (widget.heuteZeile != null) ...[
+          _HeuteZeile(
+              zeile: widget.heuteZeile!,
+              regel: widget.regel,
+              onTap: widget.onHeuteTap),
+          const SizedBox(height: 8),
+        ],
+        IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -847,6 +874,90 @@ class _UebersichtKarteState extends State<_UebersichtKarte> {
               ),
             ),
           ],
+        ),
+        ),
+      ]),
+    );
+  }
+}
+
+/// Der heutige Tag als eigene, unübersehbare Zeile ganz oben.
+///
+/// Eine Zeiterfassung wird täglich für EINEN Tag geöffnet; dieser Tag hat
+/// eine eigene Zeile verdient statt nur einer dezenten Einfärbung irgendwo in
+/// einer 31-zeiligen Liste. Im Fremdmonat wird sie ausgeblendet.
+class _HeuteZeile extends StatelessWidget {
+  final MonatsZeile zeile;
+  final SollRegel regel;
+  final VoidCallback? onTap;
+
+  const _HeuteZeile({required this.zeile, required this.regel, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final e = zeile.eintrag;
+    final erg = zeile.ergebnis;
+    final datum = '${wochentagKurz[zeile.datum.weekday - 1]}, '
+        '${zeile.datum.day}. ${monatsNamen[zeile.datum.month - 1]}';
+    final soll = regel.sollFuer(zeile.datum);
+    final offenerBlock = e != null &&
+        e.tagesart == Tagesart.arbeit &&
+        e.beginnMin != null &&
+        e.endeMin == null;
+
+    final String wert;
+    if (e == null) {
+      wert = soll > 0 ? 'noch nicht erfasst' : 'frei';
+    } else if (e.tagesart == Tagesart.arbeit) {
+      wert = offenerBlock
+          ? 'läuft seit ${formatUhrzeit(e.beginnMin)}'
+          : '${formatUhrzeit(e.beginnMin)}–${formatUhrzeit(e.endeMin)}'
+              ' · ${formatStunden(erg?.ist ?? 0)} h';
+    } else {
+      wert = tagesartLabel[e.tagesart] ?? '';
+    }
+    final offen = (e == null && soll > 0) || offenerBlock;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      color: offen
+          ? theme.colorScheme.errorContainer.withValues(alpha: 0.35)
+          : theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(offen ? Icons.edit_calendar : Icons.today, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Heute – $datum', style: theme.textTheme.labelMedium),
+                    Text(wert,
+                        style: theme.textTheme.bodyLarge
+                            ?.copyWith(fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              if (erg != null && !offenerBlock)
+                Text(formatStunden(erg.ueberstunden, vorzeichen: true),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: erg.ueberstunden < 0
+                          ? theme.colorScheme.error
+                          : (erg.ueberstunden > 0
+                              ? Colors.green.shade700
+                              : null),
+                    )),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right, size: 18),
+            ],
+          ),
         ),
       ),
     );
