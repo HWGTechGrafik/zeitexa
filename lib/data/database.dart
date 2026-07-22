@@ -186,15 +186,17 @@ class TimeEntries extends Table {
 
 /// Einzelne Stempel-Blöcke eines Tages (mehrmaliges An-/Abstempeln).
 ///
-/// Ein Tag ([TimeEntries]) mit GENAU EINEM Arbeitsblock speichert seine
-/// Zeit weiterhin nur in den flachen Feldern `beginnMin/endeMin/pauseMin`
-/// und hat KEINE Zeilen hier – so bleibt der Alltagsfall und alle
-/// Bestandsdaten unverändert. Erst ab ZWEI Blöcken werden sie hier abgelegt;
-/// die flachen Felder des Tages tragen dann die Klammer (erster Beginn,
-/// letztes Ende) und in `pauseMin` stecken die Lücken zwischen den Blöcken,
-/// damit die Ist-Stunden-Berechnung (lib/logic/berechnung.dart) unverändert
-/// weiterrechnen kann. Diese Tabelle dient also nur der Rekonstruktion im
-/// Eintragsdialog und der Anzeige „N Blöcke".
+/// Ein Tag ([TimeEntries]) mit GENAU EINEM Arbeitsblock speichert seine Zeit
+/// weiterhin nur in den flachen Feldern `beginnMin/endeMin/pauseMin` und hat
+/// KEINE Zeilen hier – so bleibt der Alltagsfall und alle Bestandsdaten
+/// unverändert. Erst ab ZWEI Blöcken werden sie hier abgelegt.
+///
+/// Die IST-Stunden eines Tages sind die SUMME der Blöcke (je Block Ende −
+/// Beginn − Pause); die LÜCKE zwischen zwei Blöcken zählt bewusst NICHT –
+/// weder als Arbeit noch als Pause. Deshalb hat jeder Block eine eigene
+/// Pause. Die flachen Tagesfelder tragen nur die Anzeige-Klammer (erster
+/// Beginn, letztes Ende) und als `pauseMin` die Summe der Blockpausen. Die
+/// echte Berechnung läuft block-genau, siehe lib/logic/berechnung.dart.
 @DataClassName('Zeitblock')
 class Zeitbloecke extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -206,6 +208,9 @@ class Zeitbloecke extends Table {
 
   /// `null` = offener Block (noch nicht ausgestempelt).
   IntColumn get endeMin => integer().nullable()();
+
+  /// Pause dieses Blocks in Minuten.
+  IntColumn get pauseMin => integer().withDefault(const Constant(0))();
 }
 
 class Places extends Table {
@@ -363,7 +368,7 @@ class ZeitexaDb extends _$ZeitexaDb {
   ZeitexaDb.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -433,6 +438,10 @@ class ZeitexaDb extends _$ZeitexaDb {
             // genau einen Block und bleiben in den flachen Feldern – daher
             // KEINE Rückfüllung nötig.
             await m.createTable(zeitbloecke);
+          }
+          if (from < 6) {
+            // Pause je Block: Ist = Summe der Blöcke, Lücke zählt nicht.
+            await m.addColumn(zeitbloecke, zeitbloecke.pauseMin);
           }
         },
       );
@@ -576,8 +585,8 @@ class ZeitexaDb extends _$ZeitexaDb {
   /// einelementige Liste bedeutet „ein Block" – dann bleibt der Tag in den
   /// flachen Feldern und es werden KEINE Zeilen gespeichert (siehe
   /// [Zeitbloecke]).
-  Future<void> setzeBloecke(
-      int eintragId, List<({int beginnMin, int? endeMin})> bloecke) async {
+  Future<void> setzeBloecke(int eintragId,
+      List<({int beginnMin, int? endeMin, int pauseMin})> bloecke) async {
     await transaction(() async {
       await (delete(zeitbloecke)..where((t) => t.eintragId.equals(eintragId)))
           .go();
@@ -587,30 +596,76 @@ class ZeitexaDb extends _$ZeitexaDb {
               ZeitbloeckeCompanion.insert(
                   eintragId: eintragId,
                   beginnMin: blk.beginnMin,
-                  endeMin: Value(blk.endeMin)),
+                  endeMin: Value(blk.endeMin),
+                  pauseMin: Value(blk.pauseMin)),
           ]));
     });
   }
 
-  /// Anzahl der Blöcke je Tageskopf für einen Monat (nur Tage mit ≥2
-  /// Blöcken tauchen auf). Für die Anzeige „· N Blöcke" in der Monatsliste.
-  Stream<Map<int, int>> watchBlockAnzahlFuerMonat(
+  Map<int, List<Zeitblock>> _gruppiere(List<Zeitblock> alle) {
+    final map = <int, List<Zeitblock>>{};
+    for (final b in alle) {
+      (map[b.eintragId] ??= []).add(b);
+    }
+    return map;
+  }
+
+  /// Blöcke aller Tage eines Monats, gruppiert nach Tageskopf-Id. Nur Tage
+  /// mit ≥2 Blöcken haben hier Einträge (Einzelblock-Tage rechnen flach).
+  Stream<Map<int, List<Zeitblock>>> watchBloeckeFuerMonat(
       int userId, int jahr, int monat) {
     final von = DateTime(jahr, monat, 1);
     final bis = DateTime(jahr, monat + 1, 1);
-    final anzahl = zeitbloecke.id.count();
-    final query = selectOnly(zeitbloecke).join([
+    final query = select(zeitbloecke).join([
       innerJoin(timeEntries, timeEntries.id.equalsExp(zeitbloecke.eintragId)),
     ])
-      ..addColumns([zeitbloecke.eintragId, anzahl])
       ..where(timeEntries.userId.equals(userId) &
           timeEntries.datum.isBiggerOrEqualValue(von) &
           timeEntries.datum.isSmallerThanValue(bis))
-      ..groupBy([zeitbloecke.eintragId]);
-    return query.watch().map((rows) => {
-          for (final r in rows)
-            r.read(zeitbloecke.eintragId)!: r.read(anzahl)!,
-        });
+      ..orderBy([OrderingTerm.asc(zeitbloecke.beginnMin)]);
+    return query
+        .watch()
+        .map((rows) => _gruppiere([for (final r in rows) r.readTable(zeitbloecke)]));
+  }
+
+  /// Wie [watchBloeckeFuerMonat], aber einmalig (für den Export).
+  Future<Map<int, List<Zeitblock>>> bloeckeFuerMonat(
+      int userId, int jahr, int monat) async {
+    final von = DateTime(jahr, monat, 1);
+    final bis = DateTime(jahr, monat + 1, 1);
+    final query = select(zeitbloecke).join([
+      innerJoin(timeEntries, timeEntries.id.equalsExp(zeitbloecke.eintragId)),
+    ])
+      ..where(timeEntries.userId.equals(userId) &
+          timeEntries.datum.isBiggerOrEqualValue(von) &
+          timeEntries.datum.isSmallerThanValue(bis))
+      ..orderBy([OrderingTerm.asc(zeitbloecke.beginnMin)]);
+    final rows = await query.get();
+    return _gruppiere([for (final r in rows) r.readTable(zeitbloecke)]);
+  }
+
+  /// Wie [watchAlleBloecke], aber einmalig (für die Auswertung).
+  Future<Map<int, List<Zeitblock>>> alleBloeckeMap(int userId) async {
+    final query = select(zeitbloecke).join([
+      innerJoin(timeEntries, timeEntries.id.equalsExp(zeitbloecke.eintragId)),
+    ])
+      ..where(timeEntries.userId.equals(userId))
+      ..orderBy([OrderingTerm.asc(zeitbloecke.beginnMin)]);
+    final rows = await query.get();
+    return _gruppiere([for (final r in rows) r.readTable(zeitbloecke)]);
+  }
+
+  /// Alle Blöcke eines Benutzers, gruppiert nach Tageskopf-Id (für Konten und
+  /// Auswertung, die über alle Einträge rechnen).
+  Stream<Map<int, List<Zeitblock>>> watchAlleBloecke(int userId) {
+    final query = select(zeitbloecke).join([
+      innerJoin(timeEntries, timeEntries.id.equalsExp(zeitbloecke.eintragId)),
+    ])
+      ..where(timeEntries.userId.equals(userId))
+      ..orderBy([OrderingTerm.asc(zeitbloecke.beginnMin)]);
+    return query
+        .watch()
+        .map((rows) => _gruppiere([for (final r in rows) r.readTable(zeitbloecke)]));
   }
 
   /// Alle Einträge eines Benutzers (für die Konten-Berechnung, siehe

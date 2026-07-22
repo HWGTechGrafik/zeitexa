@@ -104,6 +104,7 @@ KontenStand berechneKonten({
   double anfangsstandUrlaubFrTage = 0,
   bool firmenurlaubAktiv = false,
   double anfangsstandFirmenurlaubTage = 0,
+  Map<int, List<TagBlock>> bloecke = const {},
 }) {
   var urlaubMonat = 0.0;
   var urlaubGenommenGesamt = 0.0;
@@ -128,6 +129,7 @@ KontenStand berechneKonten({
       beginnMin: e.beginnMin,
       pauseMin: e.pauseMin,
       endeMin: e.endeMin,
+      bloecke: bloecke[e.id] ?? const [],
       urlaubMinuten: e.urlaubMinuten,
       halberTag: e.halberTag,
     );

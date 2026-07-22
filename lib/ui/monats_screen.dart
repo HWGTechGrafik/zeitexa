@@ -452,21 +452,30 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
                       const <TimeEntry>[];
               final orte =
                   ref.watch(ortNamenProvider).value ?? const <int, String>{};
-              final blockAnzahl =
-                  ref.watch(blockAnzahlProvider(schluessel)).value ??
-                      const <int, int>{};
+              final monatBloeckeRoh =
+                  ref.watch(monatBloeckeProvider(schluessel)).value ??
+                      const <int, List<Zeitblock>>{};
+              final alleBloeckeRoh =
+                  ref.watch(alleBloeckeProvider(widget.user.id)).value ??
+                      const <int, List<Zeitblock>>{};
+              final monatBloecke = tagBloeckeAus(monatBloeckeRoh);
+              final blockAnzahl = {
+                for (final e in monatBloeckeRoh.entries) e.key: e.value.length
+              };
               final zeilen = monatsZeilen(
                   jahr: _jahr,
                   monat: _monat,
                   eintraege: eintraege,
                   ortNamen: orte,
-                  regel: regel);
-              final summe = monatsSumme(eintraege, regel);
+                  regel: regel,
+                  bloecke: monatBloecke);
+              final summe = monatsSumme(eintraege, regel, bloecke: monatBloecke);
               final konten = berechneKonten(
                 alleEintraege: alleEintraege,
                 regel: regel,
                 jahr: _jahr,
                 monat: _monat,
+                bloecke: tagBloeckeAus(alleBloeckeRoh),
                 anfangsstandUrlaubTage: settings.anfangsstandUrlaubTage,
                 anfangsstandZeitausgleichStunden:
                     settings.anfangsstandZeitausgleichMin / 60.0,

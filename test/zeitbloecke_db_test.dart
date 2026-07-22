@@ -34,13 +34,13 @@ void main() {
     final id = (await db.eintragId(userId, tag))!;
 
     // Ein Block → keine Zeilen.
-    await db.setzeBloecke(id, [(beginnMin: 8 * 60, endeMin: 16 * 60)]);
+    await db.setzeBloecke(id, [(beginnMin: 8 * 60, endeMin: 16 * 60, pauseMin: 30)]);
     expect(await db.bloeckeFuer(id), isEmpty);
 
     // Zwei Blöcke → gespeichert, aufsteigend sortiert.
     await db.setzeBloecke(id, [
-      (beginnMin: 13 * 60, endeMin: 17 * 60),
-      (beginnMin: 8 * 60, endeMin: 12 * 60),
+      (beginnMin: 13 * 60, endeMin: 17 * 60, pauseMin: 0),
+      (beginnMin: 8 * 60, endeMin: 12 * 60, pauseMin: 30),
     ]);
     final blk = await db.bloeckeFuer(id);
     expect(blk.length, 2);
@@ -49,17 +49,17 @@ void main() {
     await db.close();
   });
 
-  test('watchBlockAnzahlFuerMonat zählt nur Tage mit ≥2 Blöcken', () async {
+  test('watchBloeckeFuerMonat liefert die Blöcke gruppiert', () async {
     final db = _db();
     final userId = await _userMitTag(db, tag);
     final id = (await db.eintragId(userId, tag))!;
     await db.setzeBloecke(id, [
-      (beginnMin: 8 * 60, endeMin: 12 * 60),
-      (beginnMin: 13 * 60, endeMin: 17 * 60),
+      (beginnMin: 8 * 60, endeMin: 12 * 60, pauseMin: 30),
+      (beginnMin: 13 * 60, endeMin: 17 * 60, pauseMin: 0),
     ]);
-    final anzahl =
-        await db.watchBlockAnzahlFuerMonat(userId, 2026, 7).first;
-    expect(anzahl[id], 2);
+    final proTag = await db.watchBloeckeFuerMonat(userId, 2026, 7).first;
+    expect(proTag[id]?.length, 2);
+    expect(proTag[id]!.first.pauseMin, 30);
     await db.close();
   });
 
@@ -68,8 +68,8 @@ void main() {
     final userId = await _userMitTag(db, tag);
     final id = (await db.eintragId(userId, tag))!;
     await db.setzeBloecke(id, [
-      (beginnMin: 8 * 60, endeMin: 12 * 60),
-      (beginnMin: 13 * 60, endeMin: 17 * 60),
+      (beginnMin: 8 * 60, endeMin: 12 * 60, pauseMin: 30),
+      (beginnMin: 13 * 60, endeMin: 17 * 60, pauseMin: 0),
     ]);
     await db.deleteEntry(userId, tag);
     expect(await db.bloeckeFuer(id), isEmpty);
@@ -81,8 +81,8 @@ void main() {
     final userId = await _userMitTag(db, tag);
     final id = (await db.eintragId(userId, tag))!;
     await db.setzeBloecke(id, [
-      (beginnMin: 8 * 60, endeMin: 12 * 60),
-      (beginnMin: 13 * 60, endeMin: 17 * 60),
+      (beginnMin: 8 * 60, endeMin: 12 * 60, pauseMin: 30),
+      (beginnMin: 13 * 60, endeMin: 17 * 60, pauseMin: 0),
     ]);
     final bytes = await erzeugeJsonSicherung(db);
 

@@ -3358,8 +3358,26 @@ class $ZeitbloeckeTable extends Zeitbloecke
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _pauseMinMeta = const VerificationMeta(
+    'pauseMin',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, eintragId, beginnMin, endeMin];
+  late final GeneratedColumn<int> pauseMin = GeneratedColumn<int>(
+    'pause_min',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    eintragId,
+    beginnMin,
+    endeMin,
+    pauseMin,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3397,6 +3415,12 @@ class $ZeitbloeckeTable extends Zeitbloecke
         endeMin.isAcceptableOrUnknown(data['ende_min']!, _endeMinMeta),
       );
     }
+    if (data.containsKey('pause_min')) {
+      context.handle(
+        _pauseMinMeta,
+        pauseMin.isAcceptableOrUnknown(data['pause_min']!, _pauseMinMeta),
+      );
+    }
     return context;
   }
 
@@ -3422,6 +3446,10 @@ class $ZeitbloeckeTable extends Zeitbloecke
         DriftSqlType.int,
         data['${effectivePrefix}ende_min'],
       ),
+      pauseMin: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pause_min'],
+      )!,
     );
   }
 
@@ -3440,11 +3468,15 @@ class Zeitblock extends DataClass implements Insertable<Zeitblock> {
 
   /// `null` = offener Block (noch nicht ausgestempelt).
   final int? endeMin;
+
+  /// Pause dieses Blocks in Minuten.
+  final int pauseMin;
   const Zeitblock({
     required this.id,
     required this.eintragId,
     required this.beginnMin,
     this.endeMin,
+    required this.pauseMin,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3455,6 +3487,7 @@ class Zeitblock extends DataClass implements Insertable<Zeitblock> {
     if (!nullToAbsent || endeMin != null) {
       map['ende_min'] = Variable<int>(endeMin);
     }
+    map['pause_min'] = Variable<int>(pauseMin);
     return map;
   }
 
@@ -3466,6 +3499,7 @@ class Zeitblock extends DataClass implements Insertable<Zeitblock> {
       endeMin: endeMin == null && nullToAbsent
           ? const Value.absent()
           : Value(endeMin),
+      pauseMin: Value(pauseMin),
     );
   }
 
@@ -3479,6 +3513,7 @@ class Zeitblock extends DataClass implements Insertable<Zeitblock> {
       eintragId: serializer.fromJson<int>(json['eintragId']),
       beginnMin: serializer.fromJson<int>(json['beginnMin']),
       endeMin: serializer.fromJson<int?>(json['endeMin']),
+      pauseMin: serializer.fromJson<int>(json['pauseMin']),
     );
   }
   @override
@@ -3489,6 +3524,7 @@ class Zeitblock extends DataClass implements Insertable<Zeitblock> {
       'eintragId': serializer.toJson<int>(eintragId),
       'beginnMin': serializer.toJson<int>(beginnMin),
       'endeMin': serializer.toJson<int?>(endeMin),
+      'pauseMin': serializer.toJson<int>(pauseMin),
     };
   }
 
@@ -3497,11 +3533,13 @@ class Zeitblock extends DataClass implements Insertable<Zeitblock> {
     int? eintragId,
     int? beginnMin,
     Value<int?> endeMin = const Value.absent(),
+    int? pauseMin,
   }) => Zeitblock(
     id: id ?? this.id,
     eintragId: eintragId ?? this.eintragId,
     beginnMin: beginnMin ?? this.beginnMin,
     endeMin: endeMin.present ? endeMin.value : this.endeMin,
+    pauseMin: pauseMin ?? this.pauseMin,
   );
   Zeitblock copyWithCompanion(ZeitbloeckeCompanion data) {
     return Zeitblock(
@@ -3509,6 +3547,7 @@ class Zeitblock extends DataClass implements Insertable<Zeitblock> {
       eintragId: data.eintragId.present ? data.eintragId.value : this.eintragId,
       beginnMin: data.beginnMin.present ? data.beginnMin.value : this.beginnMin,
       endeMin: data.endeMin.present ? data.endeMin.value : this.endeMin,
+      pauseMin: data.pauseMin.present ? data.pauseMin.value : this.pauseMin,
     );
   }
 
@@ -3518,13 +3557,14 @@ class Zeitblock extends DataClass implements Insertable<Zeitblock> {
           ..write('id: $id, ')
           ..write('eintragId: $eintragId, ')
           ..write('beginnMin: $beginnMin, ')
-          ..write('endeMin: $endeMin')
+          ..write('endeMin: $endeMin, ')
+          ..write('pauseMin: $pauseMin')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, eintragId, beginnMin, endeMin);
+  int get hashCode => Object.hash(id, eintragId, beginnMin, endeMin, pauseMin);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3532,7 +3572,8 @@ class Zeitblock extends DataClass implements Insertable<Zeitblock> {
           other.id == this.id &&
           other.eintragId == this.eintragId &&
           other.beginnMin == this.beginnMin &&
-          other.endeMin == this.endeMin);
+          other.endeMin == this.endeMin &&
+          other.pauseMin == this.pauseMin);
 }
 
 class ZeitbloeckeCompanion extends UpdateCompanion<Zeitblock> {
@@ -3540,17 +3581,20 @@ class ZeitbloeckeCompanion extends UpdateCompanion<Zeitblock> {
   final Value<int> eintragId;
   final Value<int> beginnMin;
   final Value<int?> endeMin;
+  final Value<int> pauseMin;
   const ZeitbloeckeCompanion({
     this.id = const Value.absent(),
     this.eintragId = const Value.absent(),
     this.beginnMin = const Value.absent(),
     this.endeMin = const Value.absent(),
+    this.pauseMin = const Value.absent(),
   });
   ZeitbloeckeCompanion.insert({
     this.id = const Value.absent(),
     required int eintragId,
     required int beginnMin,
     this.endeMin = const Value.absent(),
+    this.pauseMin = const Value.absent(),
   }) : eintragId = Value(eintragId),
        beginnMin = Value(beginnMin);
   static Insertable<Zeitblock> custom({
@@ -3558,12 +3602,14 @@ class ZeitbloeckeCompanion extends UpdateCompanion<Zeitblock> {
     Expression<int>? eintragId,
     Expression<int>? beginnMin,
     Expression<int>? endeMin,
+    Expression<int>? pauseMin,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (eintragId != null) 'eintrag_id': eintragId,
       if (beginnMin != null) 'beginn_min': beginnMin,
       if (endeMin != null) 'ende_min': endeMin,
+      if (pauseMin != null) 'pause_min': pauseMin,
     });
   }
 
@@ -3572,12 +3618,14 @@ class ZeitbloeckeCompanion extends UpdateCompanion<Zeitblock> {
     Value<int>? eintragId,
     Value<int>? beginnMin,
     Value<int?>? endeMin,
+    Value<int>? pauseMin,
   }) {
     return ZeitbloeckeCompanion(
       id: id ?? this.id,
       eintragId: eintragId ?? this.eintragId,
       beginnMin: beginnMin ?? this.beginnMin,
       endeMin: endeMin ?? this.endeMin,
+      pauseMin: pauseMin ?? this.pauseMin,
     );
   }
 
@@ -3596,6 +3644,9 @@ class ZeitbloeckeCompanion extends UpdateCompanion<Zeitblock> {
     if (endeMin.present) {
       map['ende_min'] = Variable<int>(endeMin.value);
     }
+    if (pauseMin.present) {
+      map['pause_min'] = Variable<int>(pauseMin.value);
+    }
     return map;
   }
 
@@ -3605,7 +3656,8 @@ class ZeitbloeckeCompanion extends UpdateCompanion<Zeitblock> {
           ..write('id: $id, ')
           ..write('eintragId: $eintragId, ')
           ..write('beginnMin: $beginnMin, ')
-          ..write('endeMin: $endeMin')
+          ..write('endeMin: $endeMin, ')
+          ..write('pauseMin: $pauseMin')
           ..write(')'))
         .toString();
   }
@@ -7379,6 +7431,7 @@ typedef $$ZeitbloeckeTableCreateCompanionBuilder =
       required int eintragId,
       required int beginnMin,
       Value<int?> endeMin,
+      Value<int> pauseMin,
     });
 typedef $$ZeitbloeckeTableUpdateCompanionBuilder =
     ZeitbloeckeCompanion Function({
@@ -7386,6 +7439,7 @@ typedef $$ZeitbloeckeTableUpdateCompanionBuilder =
       Value<int> eintragId,
       Value<int> beginnMin,
       Value<int?> endeMin,
+      Value<int> pauseMin,
     });
 
 final class $$ZeitbloeckeTableReferences
@@ -7431,6 +7485,11 @@ class $$ZeitbloeckeTableFilterComposer
 
   ColumnFilters<int> get endeMin => $composableBuilder(
     column: $table.endeMin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pauseMin => $composableBuilder(
+    column: $table.pauseMin,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7482,6 +7541,11 @@ class $$ZeitbloeckeTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get pauseMin => $composableBuilder(
+    column: $table.pauseMin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TimeEntriesTableOrderingComposer get eintragId {
     final $$TimeEntriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -7523,6 +7587,9 @@ class $$ZeitbloeckeTableAnnotationComposer
 
   GeneratedColumn<int> get endeMin =>
       $composableBuilder(column: $table.endeMin, builder: (column) => column);
+
+  GeneratedColumn<int> get pauseMin =>
+      $composableBuilder(column: $table.pauseMin, builder: (column) => column);
 
   $$TimeEntriesTableAnnotationComposer get eintragId {
     final $$TimeEntriesTableAnnotationComposer composer = $composerBuilder(
@@ -7580,11 +7647,13 @@ class $$ZeitbloeckeTableTableManager
                 Value<int> eintragId = const Value.absent(),
                 Value<int> beginnMin = const Value.absent(),
                 Value<int?> endeMin = const Value.absent(),
+                Value<int> pauseMin = const Value.absent(),
               }) => ZeitbloeckeCompanion(
                 id: id,
                 eintragId: eintragId,
                 beginnMin: beginnMin,
                 endeMin: endeMin,
+                pauseMin: pauseMin,
               ),
           createCompanionCallback:
               ({
@@ -7592,11 +7661,13 @@ class $$ZeitbloeckeTableTableManager
                 required int eintragId,
                 required int beginnMin,
                 Value<int?> endeMin = const Value.absent(),
+                Value<int> pauseMin = const Value.absent(),
               }) => ZeitbloeckeCompanion.insert(
                 id: id,
                 eintragId: eintragId,
                 beginnMin: beginnMin,
                 endeMin: endeMin,
+                pauseMin: pauseMin,
               ),
           withReferenceMapper: (p0) => p0
               .map(

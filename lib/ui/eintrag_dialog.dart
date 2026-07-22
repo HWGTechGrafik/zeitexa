@@ -35,21 +35,21 @@ class _EintragDialog extends ConsumerStatefulWidget {
   ConsumerState<_EintragDialog> createState() => _EintragDialogState();
 }
 
-/// Ein einzelner Stempel-Block in der Eingabemaske (Beginn/Ende). Ende darf
-/// leer bleiben (noch nicht ausgestempelt).
+/// Ein einzelner Stempel-Block in der Eingabemaske (Beginn/Ende + eigene
+/// Pause). Ende darf leer bleiben (noch nicht ausgestempelt).
 class _Block {
   TimeOfDay? beginn;
   TimeOfDay? ende;
-  _Block({this.beginn, this.ende});
+  int pauseMin;
+  _Block({this.beginn, this.ende, this.pauseMin = 0});
 }
 
 class _EintragDialogState extends ConsumerState<_EintragDialog> {
   late Tagesart _tagesart;
 
-  /// Stempel-Blöcke des Tages. Bei einem Block gilt zusätzlich [_pauseMin];
-  /// bei mehreren zählen die Lücken zwischen den Blöcken als Pause.
+  /// Stempel-Blöcke des Tages. Jeder Block hat seine eigene Pause; die IST-
+  /// Zeit ist die Summe der Blöcke, die Lücke dazwischen zählt NICHT.
   final List<_Block> _bloecke = [];
-  int _pauseMin = 30;
   SonderurlaubGrund? _grund;
 
   /// Sperrt Speichern/Löschen gegen versehentliches Doppeltippen (sonst
@@ -81,8 +81,9 @@ class _EintragDialogState extends ConsumerState<_EintragDialog> {
       // Ein Block aus den flachen Feldern; mehrere Blöcke lädt
       // _ladeEinstellungen() bei Bedarf aus der Zeitblock-Tabelle nach.
       _bloecke.add(_Block(
-          beginn: _vonMinuten(e.beginnMin), ende: _vonMinuten(e.endeMin)));
-      _pauseMin = e.pauseMin;
+          beginn: _vonMinuten(e.beginnMin),
+          ende: _vonMinuten(e.endeMin),
+          pauseMin: e.pauseMin));
     } else {
       // Ein leerer Block; Vorbelegung folgt den Standardzeiten des
       // Benutzers, siehe _ladeEinstellungen().
@@ -111,7 +112,10 @@ class _EintragDialogState extends ConsumerState<_EintragDialog> {
       if (blk.length >= 2) {
         mehrfach = [
           for (final b in blk)
-            _Block(beginn: _vonMinuten(b.beginnMin), ende: _vonMinuten(b.endeMin))
+            _Block(
+                beginn: _vonMinuten(b.beginnMin),
+                ende: _vonMinuten(b.endeMin),
+                pauseMin: b.pauseMin)
         ];
       }
     }
@@ -127,8 +131,8 @@ class _EintragDialogState extends ConsumerState<_EintragDialog> {
                 const TimeOfDay(hour: 7, minute: 0),
             ende: _vonMinuten(standard.endeMin) ??
                 const TimeOfDay(hour: 16, minute: 0),
+            pauseMin: standard.pauseMin,
           ));
-        _pauseMin = standard.pauseMin;
       } else if (mehrfach != null) {
         _bloecke
           ..clear()
@@ -194,18 +198,18 @@ class _EintragDialogState extends ConsumerState<_EintragDialog> {
 
   int _zuMinuten(TimeOfDay t) => t.hour * 60 + t.minute;
 
-  /// Wertet die Blockliste aus. Liefert die flachen Felder für den Tageskopf
-  /// (bei mehreren Blöcken stecken die Lücken in [pauseMin] und ein noch
-  /// offener Block ergibt `endeMin == null`) sowie die zu speichernden
-  /// Blöcke (leer bei höchstens einem Block). Bei einem Fehler wird
-  /// [_fehler] gesetzt und `null` zurückgegeben.
+  /// Wertet die Blockliste aus. Die flachen Tagesfelder dienen nur der Anzeige
+  /// (Klammer erster Beginn – letztes Ende, `pauseMin` = Summe der
+  /// Blockpausen); die IST-Berechnung läuft block-genau. Ein offener Block
+  /// ergibt `endeMin == null`. Bei einem Fehler wird [_fehler] gesetzt und
+  /// `null` zurückgegeben.
   ({
     int? beginnMin,
     int? endeMin,
     int pauseMin,
-    List<({int beginnMin, int? endeMin})> bloecke,
+    List<({int beginnMin, int? endeMin, int pauseMin})> bloecke,
   })? _sammleZeiten() {
-    final gueltig = <({int beginnMin, int? endeMin})>[];
+    final gueltig = <({int beginnMin, int? endeMin, int pauseMin})>[];
     for (final b in _bloecke) {
       if (b.beginn == null) continue; // leerer Block wird ignoriert
       final bm = _zuMinuten(b.beginn!);
@@ -214,7 +218,7 @@ class _EintragDialogState extends ConsumerState<_EintragDialog> {
         _fehler = 'Ende muss nach Beginn liegen.';
         return null;
       }
-      gueltig.add((beginnMin: bm, endeMin: em));
+      gueltig.add((beginnMin: bm, endeMin: em, pauseMin: b.pauseMin));
     }
     gueltig.sort((a, b) => a.beginnMin.compareTo(b.beginnMin));
     final offene = gueltig.where((b) => b.endeMin == null).length;
@@ -229,34 +233,25 @@ class _EintragDialogState extends ConsumerState<_EintragDialog> {
     if (gueltig.isEmpty) {
       return (beginnMin: null, endeMin: null, pauseMin: 0, bloecke: const []);
     }
+    // Summe der Blockpausen (nur geschlossene Blöcke) für die Anzeige.
+    var pausenSumme = 0;
+    for (final b in gueltig) {
+      if (b.endeMin != null) pausenSumme += b.pauseMin;
+    }
     if (gueltig.length == 1) {
       return (
         beginnMin: gueltig[0].beginnMin,
         endeMin: gueltig[0].endeMin,
-        pauseMin: gueltig[0].endeMin == null ? 0 : _pauseMin,
+        pauseMin: gueltig[0].endeMin == null ? 0 : pausenSumme,
         bloecke: const [],
       );
     }
     final ersterBeginn = gueltig.first.beginnMin;
-    if (gueltig.last.endeMin == null) {
-      // Noch offen → ganzer Tag zählt 0 Ist, bis ausgestempelt wird.
-      return (
-        beginnMin: ersterBeginn,
-        endeMin: null,
-        pauseMin: 0,
-        bloecke: gueltig,
-      );
-    }
-    final letztesEnde = gueltig.last.endeMin!;
-    var gearbeitet = 0;
-    for (final b in gueltig) {
-      gearbeitet += b.endeMin! - b.beginnMin;
-    }
-    final luecken = (letztesEnde - ersterBeginn) - gearbeitet;
+    final letztesEnde = gueltig.last.endeMin; // null = offen
     return (
       beginnMin: ersterBeginn,
       endeMin: letztesEnde,
-      pauseMin: luecken < 0 ? 0 : luecken,
+      pauseMin: pausenSumme,
       bloecke: gueltig,
     );
   }
@@ -278,7 +273,7 @@ class _EintragDialogState extends ConsumerState<_EintragDialog> {
     int? beginnMin, endeMin;
     var pauseMin = 0;
     int? ortId;
-    var bloecke = const <({int beginnMin, int? endeMin})>[];
+    var bloecke = const <({int beginnMin, int? endeMin, int pauseMin})>[];
 
     final istUrlaubsart = urlaubsArten.contains(_tagesart);
     // Urlaubsanteil: null heißt „ganzer Tag". Nur beim Einzeltag
@@ -481,14 +476,24 @@ class _EintragDialogState extends ConsumerState<_EintragDialog> {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.free_breakfast_outlined),
+            label: Text('Pause ${formatPause(block.pauseMin)}'),
+            onPressed: () async {
+              final neu =
+                  await zeigePauseUhr(context, initialMinuten: block.pauseMin);
+              if (neu != null) setState(() => block.pauseMin = neu);
+            },
+          ),
         ],
       ),
     );
   }
 
-  /// Beginn/Ende/Pause – bei Arbeit und beim Teil-Urlaub. Mehrere Blöcke
-  /// bilden mehrmaliges An-/Abstempeln am selben Tag ab; die Pause ergibt
-  /// sich dann aus den Lücken und das Pausenfeld entfällt.
+  /// Blöcke (Beginn/Ende/Pause je Block) – bei Arbeit und beim Teil-Urlaub.
+  /// Mehrere Blöcke bilden mehrmaliges An-/Abstempeln am selben Tag ab; die
+  /// IST-Zeit ist die Summe der Blöcke, die Lücke dazwischen zählt NICHT.
   List<Widget> _zeitFelder() {
     final mehrere = _bloecke.length > 1;
     return [
@@ -505,21 +510,11 @@ class _EintragDialogState extends ConsumerState<_EintragDialog> {
         Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(
-            'Bei mehreren Blöcken zählen die Lücken automatisch als Pause.',
+            'Die IST-Zeit ist die Summe der Blöcke – die Zeit zwischen zwei '
+            'Blöcken zählt nicht als Arbeit und nicht als Pause.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
-        )
-      else ...[
-        const SizedBox(height: 4),
-        OutlinedButton.icon(
-          icon: const Icon(Icons.free_breakfast_outlined),
-          label: Text('Pause ${formatPause(_pauseMin)}'),
-          onPressed: () async {
-            final neu = await zeigePauseUhr(context, initialMinuten: _pauseMin);
-            if (neu != null) setState(() => _pauseMin = neu);
-          },
         ),
-      ],
     ];
   }
 

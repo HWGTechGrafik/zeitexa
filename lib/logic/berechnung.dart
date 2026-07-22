@@ -65,6 +65,14 @@ class SollRegel {
   }
 }
 
+/// Ein einzelner Stempel-Block (Beginn/Ende/Pause) in neutraler Form.
+class TagBlock {
+  final int? beginnMin;
+  final int? endeMin;
+  final int pauseMin;
+  const TagBlock({this.beginnMin, this.endeMin, this.pauseMin = 0});
+}
+
 /// Ein Tages-Eintrag in neutraler Form (DB-unabhängig).
 class TagDaten {
   final DateTime datum;
@@ -72,6 +80,12 @@ class TagDaten {
   final int? beginnMin;
   final int pauseMin;
   final int? endeMin;
+
+  /// Stempel-Blöcke des Tages (mehrmaliges An-/Abstempeln). Ist die Liste
+  /// leer, gilt der Tag als EIN Block aus [beginnMin]/[endeMin]/[pauseMin].
+  /// Bei mehreren Blöcken sind die IST-Stunden die SUMME der Blöcke – die
+  /// LÜCKE dazwischen zählt NICHT (siehe [istStunden]).
+  final List<TagBlock> bloecke;
 
   /// Urlaubsanteil des Tages in Minuten (Urlaub/Sonderurlaub/Firmenurlaub);
   /// null = ganzer Tag.
@@ -87,6 +101,7 @@ class TagDaten {
     this.beginnMin,
     this.pauseMin = 0,
     this.endeMin,
+    this.bloecke = const [],
     this.urlaubMinuten,
     this.halberTag = false,
   });
@@ -186,24 +201,37 @@ TagErgebnis berechneMitSoll({
   }
 }
 
-/// Geleistete Stunden aus Beginn/Pause/Ende; 0 wenn unvollständig oder der
-/// Block noch offen ist (kein Ende erfasst).
+/// Geleistete Stunden eines Tages.
 ///
-/// Bei mehreren Stempel-Blöcken steckt die Summe der Lücken bereits in
-/// [TagDaten.pauseMin] (siehe Speicherpfad im Eintragsdialog), daher genügt
-/// hier weiterhin Ende − Beginn − Pause. Ist eine [Pausenregel] aktiv und
-/// die Anwesenheit erreicht die Schwelle, wird die Pause auf die
-/// Mindestpause AUFGEFÜLLT (kein Doppelabzug).
+/// Die IST-Zeit ist die SUMME der Blöcke: je Block (Ende − Beginn − Pause).
+/// Die LÜCKE zwischen zwei Blöcken zählt bewusst NICHT – weder als Arbeit
+/// noch als Pause. Ein Tag ohne Blockliste gilt als EIN Block aus den
+/// flachen Feldern (Bestands-/Alltagsfall). Offene Blöcke (kein Ende) zählen
+/// 0. Ist eine [Pausenregel] aktiv und die Brutto-Arbeitszeit (Summe der
+/// Blockspannen, ohne Lücken) erreicht die Schwelle, wird die GESAMTE Pause
+/// auf die Mindestpause AUFGEFÜLLT (kein Doppelabzug).
 double istStunden(TagDaten tag, {Pausenregel pause = Pausenregel.aus}) {
-  final beginn = tag.beginnMin;
-  final ende = tag.endeMin;
-  if (beginn == null || ende == null || ende <= beginn) return 0;
-  final anwesenheit = ende - beginn;
-  var pauseMin = tag.pauseMin;
-  if (pause.aktiv && anwesenheit >= pause.schwelleMin) {
-    if (pauseMin < pause.mindestMin) pauseMin = pause.mindestMin;
+  final bloecke = tag.bloecke.isEmpty
+      ? [
+          TagBlock(
+              beginnMin: tag.beginnMin,
+              endeMin: tag.endeMin,
+              pauseMin: tag.pauseMin)
+        ]
+      : tag.bloecke;
+  var brutto = 0; // Summe der Blockspannen (ohne Lücken)
+  var pausen = 0; // Summe der Blockpausen
+  for (final b in bloecke) {
+    final beginn = b.beginnMin, ende = b.endeMin;
+    if (beginn == null || ende == null || ende <= beginn) continue;
+    brutto += ende - beginn;
+    pausen += b.pauseMin;
   }
-  final minuten = anwesenheit - pauseMin;
+  if (brutto <= 0) return 0;
+  if (pause.aktiv && brutto >= pause.schwelleMin && pausen < pause.mindestMin) {
+    pausen = pause.mindestMin;
+  }
+  final minuten = brutto - pausen;
   return minuten <= 0 ? 0 : minuten / 60.0;
 }
 

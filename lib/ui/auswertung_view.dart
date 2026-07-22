@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../data/database.dart';
 import '../export/auswertung_export.dart';
+import '../export/monats_daten.dart' show tagBloeckeAus;
 import '../logic/auswertung.dart';
 import '../logic/backup_stub.dart'
     if (dart.library.io) '../logic/backup_io.dart' as plattform;
@@ -97,13 +98,20 @@ class _AuswertungViewState extends ConsumerState<AuswertungView> {
         if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
-        final auswertungen = monatsAuswertungenAusEintraegen(
-          username: user.username,
-          anzeigename: user.displayName,
-          eintraege: snap.data!,
-          regel: regel,
-        );
-        return Scaffold(
+        final eintraege = snap.data!;
+        return FutureBuilder<Map<int, List<Zeitblock>>>(
+          future: ref.read(dbProvider).alleBloeckeMap(user.id),
+          builder: (context, blkSnap) {
+            final bloecke =
+                tagBloeckeAus(blkSnap.data ?? const <int, List<Zeitblock>>{});
+            final auswertungen = monatsAuswertungenAusEintraegen(
+              username: user.username,
+              anzeigename: user.displayName,
+              eintraege: eintraege,
+              regel: regel,
+              bloecke: bloecke,
+            );
+            return Scaffold(
           floatingActionButton: auswertungen.isEmpty
               ? null
               : FloatingActionButton.extended(
@@ -152,6 +160,8 @@ class _AuswertungViewState extends ConsumerState<AuswertungView> {
                     ),
                   ],
                 ),
+            );
+          },
         );
       },
     );

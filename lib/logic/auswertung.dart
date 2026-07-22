@@ -65,11 +65,15 @@ List<MonatsAuswertung> berechneMonatsAuswertungen({
 }
 
 /// [berechneMonatsAuswertungen] direkt aus Datenbank-Einträgen.
+///
+/// [bloecke] bildet Tageskopf-Id → Stempel-Blöcke ab (nur Tage mit ≥2
+/// Blöcken); fehlt ein Tag, gilt er als Einzelblock.
 List<MonatsAuswertung> monatsAuswertungenAusEintraegen({
   required String username,
   required String anzeigename,
   required Iterable<TimeEntry> eintraege,
   required SollRegel regel,
+  Map<int, List<TagBlock>> bloecke = const {},
 }) =>
     berechneMonatsAuswertungen(
       username: username,
@@ -83,6 +87,7 @@ List<MonatsAuswertung> monatsAuswertungenAusEintraegen({
             beginnMin: e.beginnMin,
             pauseMin: e.pauseMin,
             endeMin: e.endeMin,
+            bloecke: bloecke[e.id] ?? const [],
             urlaubMinuten: e.urlaubMinuten,
             halberTag: e.halberTag,
           ),

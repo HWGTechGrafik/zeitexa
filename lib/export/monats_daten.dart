@@ -4,6 +4,17 @@ import '../logic/feiertage.dart';
 
 const wochentagKurz = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
+/// Wandelt die DB-Blockzeilen (gruppiert nach Tageskopf-Id) in die reinen
+/// [TagBlock]e der Rechenlogik um.
+Map<int, List<TagBlock>> tagBloeckeAus(Map<int, List<Zeitblock>> rohBloecke) => {
+      for (final e in rohBloecke.entries)
+        e.key: [
+          for (final b in e.value)
+            TagBlock(
+                beginnMin: b.beginnMin, endeMin: b.endeMin, pauseMin: b.pauseMin)
+        ],
+    };
+
 const tagesartLabel = {
   Tagesart.arbeit: 'Arbeit',
   Tagesart.urlaub: 'Urlaub',
@@ -66,12 +77,16 @@ class MonatsZeile {
 }
 
 /// Baut für jeden Kalendertag des Monats eine Zeile.
+///
+/// [bloecke] bildet Tageskopf-Id → Stempel-Blöcke ab (nur Tage mit ≥2
+/// Blöcken). Fehlt ein Tag dort, gilt er als Einzelblock (flache Felder).
 List<MonatsZeile> monatsZeilen({
   required int jahr,
   required int monat,
   required List<TimeEntry> eintraege,
   required Map<int, String> ortNamen,
   required SollRegel regel,
+  Map<int, List<TagBlock>> bloecke = const {},
 }) {
   final proTag = {
     for (final e in eintraege) DateTime(e.datum.year, e.datum.month, e.datum.day).day: e
@@ -79,12 +94,13 @@ List<MonatsZeile> monatsZeilen({
   final tageImMonat = DateTime(jahr, monat + 1, 0).day;
   return [
     for (var tag = 1; tag <= tageImMonat; tag++)
-      _zeile(DateTime(jahr, monat, tag), proTag[tag], ortNamen, regel),
+      _zeile(DateTime(jahr, monat, tag), proTag[tag], ortNamen, regel, bloecke),
   ];
 }
 
 MonatsZeile _zeile(DateTime datum, TimeEntry? eintrag,
-    Map<int, String> ortNamen, SollRegel regel) {
+    Map<int, String> ortNamen, SollRegel regel,
+    Map<int, List<TagBlock>> bloecke) {
   TagErgebnis? ergebnis;
   if (eintrag != null) {
     ergebnis = berechneTag(
@@ -94,6 +110,9 @@ MonatsZeile _zeile(DateTime datum, TimeEntry? eintrag,
         beginnMin: eintrag.beginnMin,
         pauseMin: eintrag.pauseMin,
         endeMin: eintrag.endeMin,
+        bloecke: bloecke[eintrag.id] ?? const [],
+        urlaubMinuten: eintrag.urlaubMinuten,
+        halberTag: eintrag.halberTag,
       ),
       regel,
     );
@@ -110,7 +129,8 @@ MonatsZeile _zeile(DateTime datum, TimeEntry? eintrag,
 }
 
 /// Summen über die erfassten Tage eines Monats.
-MonatsSumme monatsSumme(List<TimeEntry> eintraege, SollRegel regel) =>
+MonatsSumme monatsSumme(List<TimeEntry> eintraege, SollRegel regel,
+        {Map<int, List<TagBlock>> bloecke = const {}}) =>
     summiere([
       for (final e in eintraege)
         TagDaten(
@@ -119,6 +139,9 @@ MonatsSumme monatsSumme(List<TimeEntry> eintraege, SollRegel regel) =>
           beginnMin: e.beginnMin,
           pauseMin: e.pauseMin,
           endeMin: e.endeMin,
+          bloecke: bloecke[e.id] ?? const [],
+          urlaubMinuten: e.urlaubMinuten,
+          halberTag: e.halberTag,
         ),
     ], regel);
 

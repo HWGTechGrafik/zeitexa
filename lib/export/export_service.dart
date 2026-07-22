@@ -84,13 +84,15 @@ class ExportService {
     };
     final regel = await regelFuer(user.id);
     final branding = await db.branding();
+    final bloecke = tagBloeckeAus(await db.bloeckeFuerMonat(user.id, jahr, monat));
     final zeilen = monatsZeilen(
         jahr: jahr,
         monat: monat,
         eintraege: eintraege,
         ortNamen: orte,
-        regel: regel);
-    final summe = monatsSumme(eintraege, regel);
+        regel: regel,
+        bloecke: bloecke);
+    final summe = monatsSumme(eintraege, regel, bloecke: bloecke);
 
     final jsonText = ZeitexaJson.export(
         user: user,

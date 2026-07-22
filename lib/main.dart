@@ -78,12 +78,18 @@ final ortNamenProvider = StreamProvider<Map<int, String>>((ref) {
       (orte) => {for (final o in orte) o.id: o.name});
 });
 
-/// Anzahl der Stempel-Blöcke je Tageskopf (nur Tage mit ≥2 Blöcken), für die
-/// Anzeige „· N Blöcke" in der Monatsliste.
-final blockAnzahlProvider = StreamProvider.family<Map<int, int>,
+/// Stempel-Blöcke je Tageskopf für den angezeigten Monat (nur Tage mit ≥2
+/// Blöcken) – für die block-genaue Berechnung UND die Anzeige „· N Blöcke".
+final monatBloeckeProvider = StreamProvider.family<Map<int, List<Zeitblock>>,
     ({int userId, int jahr, int monat})>(
   (ref, p) =>
-      ref.watch(dbProvider).watchBlockAnzahlFuerMonat(p.userId, p.jahr, p.monat),
+      ref.watch(dbProvider).watchBloeckeFuerMonat(p.userId, p.jahr, p.monat),
+);
+
+/// Alle Stempel-Blöcke des Benutzers – für Konten (rechnet über alle Tage).
+final alleBloeckeProvider =
+    StreamProvider.family<Map<int, List<Zeitblock>>, int>(
+  (ref, userId) => ref.watch(dbProvider).watchAlleBloecke(userId),
 );
 
 /// Interner Testmodus - NUR fuer Builds mit
