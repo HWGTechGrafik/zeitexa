@@ -197,18 +197,31 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
     if (gewaehlt != null) _springeZu(gewaehlt.year, gewaehlt.month);
   }
 
-  /// Kalender-Icon: springt per (deutschem) Datumswähler in einen beliebigen
-  /// Monat.
-  Future<void> _kalenderSpringen() async {
-    final heute = DateTime.now();
-    final ziel = await showDatePicker(
+  /// Öffnet das Monatsraster: jeder Tag farbig nach Zustand, Tippen springt
+  /// direkt in den Tageseintrag. Beantwortet die Frage „wo fehlt mir noch
+  /// etwas?" auf einen Blick.
+  Future<void> _oeffneKalender() async {
+    final regel = _regel;
+    if (regel == null) return;
+    final schluessel = (userId: widget.user.id, jahr: _jahr, monat: _monat);
+    final eintraege = await ref.read(monatEintraegeProvider(schluessel).future);
+    final orte = await ref.read(ortNamenProvider.future);
+    final bloeckeRoh = await ref.read(monatBloeckeProvider(schluessel).future);
+    if (!mounted) return;
+    final zeilen = monatsZeilen(
+        jahr: _jahr,
+        monat: _monat,
+        eintraege: eintraege,
+        ortNamen: orte,
+        regel: regel,
+        bloecke: tagBloeckeAus(bloeckeRoh));
+    final gewaehlt = await showDialog<MonatsZeile>(
       context: context,
-      initialDate: DateTime(_jahr, _monat, 1),
-      firstDate: DateTime(heute.year - 5, 1, 1),
-      lastDate: DateTime(heute.year + 2, 12, 31),
-      helpText: 'Monat auswählen',
+      builder: (context) => _KalenderDialog(
+          jahr: _jahr, monat: _monat, zeilen: zeilen, regel: regel),
     );
-    if (ziel != null) _springeZu(ziel.year, ziel.month);
+    if (gewaehlt == null || !mounted) return;
+    await _oeffneEintrag(gewaehlt.datum, gewaehlt.eintrag);
   }
 
   Future<void> _oeffneEintrag(DateTime datum, TimeEntry? eintrag) async {
@@ -359,8 +372,8 @@ class _MonatsScreenState extends ConsumerState<MonatsScreen> {
         ),
         actions: [
           IconButton(
-              tooltip: 'Im Kalender springen',
-              onPressed: _kalenderSpringen,
+              tooltip: 'Monatskalender öffnen',
+              onPressed: _oeffneKalender,
               icon: const Icon(Icons.calendar_month)),
           TextButton.icon(
               onPressed: _heute,
@@ -960,6 +973,175 @@ class _HeuteZeile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Monatsraster zum schnellen Springen und Suchen.
+///
+/// Ein reines Zahlenraster wäre gegenüber dem Dropdown wertlos – der Nutzen
+/// liegt in der Färbung: erfasst, offen, Urlaub, krank, Feiertag, frei. Damit
+/// beantwortet ein Blick die Frage „wo fehlt mir noch etwas?".
+class _KalenderDialog extends StatelessWidget {
+  final int jahr;
+  final int monat;
+  final List<MonatsZeile> zeilen;
+  final SollRegel regel;
+
+  const _KalenderDialog(
+      {required this.jahr,
+      required this.monat,
+      required this.zeilen,
+      required this.regel});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final heute = DateTime.now();
+    // Leerfelder bis zum ersten Wochentag (Montag = 1).
+    final vorlauf = DateTime(jahr, monat, 1).weekday - 1;
+
+    return AlertDialog(
+      title: Text(monatsTitel(jahr, monat)),
+      content: SizedBox(
+        width: 340,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  for (final tag in wochentagKurz)
+                    Expanded(
+                      child: Text(tag,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelSmall),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              GridView.count(
+                crossAxisCount: 7,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 4,
+                crossAxisSpacing: 4,
+                children: [
+                  for (var i = 0; i < vorlauf; i++) const SizedBox(),
+                  for (final z in zeilen)
+                    _KalenderTag(
+                      zeile: z,
+                      regel: regel,
+                      istHeute: z.datum.year == heute.year &&
+                          z.datum.month == heute.month &&
+                          z.datum.day == heute.day,
+                      onTap: () => Navigator.pop(context, z),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const _KalenderLegende(),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Schließen')),
+      ],
+    );
+  }
+}
+
+class _KalenderTag extends StatelessWidget {
+  final MonatsZeile zeile;
+  final SollRegel regel;
+  final bool istHeute;
+  final VoidCallback onTap;
+
+  const _KalenderTag(
+      {required this.zeile,
+      required this.regel,
+      required this.istHeute,
+      required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final farbe = kalenderFarbe(theme.colorScheme, zeile, regel);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        decoration: BoxDecoration(
+          color: farbe,
+          borderRadius: BorderRadius.circular(6),
+          border: istHeute
+              ? Border.all(color: theme.colorScheme.primary, width: 2)
+              : null,
+        ),
+        alignment: Alignment.center,
+        child: Text('${zeile.datum.day}',
+            style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: istHeute ? FontWeight.bold : null)),
+      ),
+    );
+  }
+}
+
+/// Farbe eines Tages im Monatsraster.
+Color kalenderFarbe(ColorScheme farben, MonatsZeile z, SollRegel regel) {
+  final e = z.eintrag;
+  if (e == null) {
+    if (z.feiertagsname != null) return farben.tertiaryContainer;
+    // Ein Arbeitstag ohne Eintrag ist genau die Lücke, die man sucht.
+    return regel.sollFuer(z.datum) <= 0
+        ? farben.surfaceContainerHighest
+        : farben.errorContainer;
+  }
+  return switch (e.tagesart) {
+    Tagesart.arbeit => farben.primaryContainer,
+    Tagesart.urlaub ||
+    Tagesart.sonderurlaub ||
+    Tagesart.firmenurlaub =>
+      farben.secondaryContainer,
+    Tagesart.krank => farben.errorContainer,
+    Tagesart.feiertag => farben.tertiaryContainer,
+    _ => farben.surfaceContainerHighest,
+  };
+}
+
+class _KalenderLegende extends StatelessWidget {
+  const _KalenderLegende();
+
+  @override
+  Widget build(BuildContext context) {
+    final farben = Theme.of(context).colorScheme;
+    final stil = Theme.of(context).textTheme.labelSmall;
+    Widget punkt(Color farbe, String text) => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                    color: farbe, borderRadius: BorderRadius.circular(3))),
+            const SizedBox(width: 4),
+            Text(text, style: stil),
+          ],
+        );
+    return Wrap(
+      spacing: 10,
+      runSpacing: 4,
+      alignment: WrapAlignment.center,
+      children: [
+        punkt(farben.primaryContainer, 'erfasst'),
+        punkt(farben.errorContainer, 'offen / krank'),
+        punkt(farben.secondaryContainer, 'Urlaub'),
+        punkt(farben.tertiaryContainer, 'Feiertag'),
+        punkt(farben.surfaceContainerHighest, 'frei'),
+      ],
     );
   }
 }
