@@ -1,5 +1,0 @@
-# Privater Schluessel darf NIE committet werden.
-schluessel/privater_schluessel.json
-ausgabe/
-.dart_tool/
-pubspec.lock
