@@ -131,5 +131,29 @@
   -->
   <script src="flutter_bootstrap.js" async=""></script>
 
+  <!--
+    Offline-Betrieb: eigener Service Worker (web/sw.js).
+
+    Flutter meldet seit 3.44 keinen brauchbaren Worker mehr an - der
+    mitgelieferte flutter_service_worker.js meldet sich beim Aktivieren
+    selbst wieder ab. Ohne den Worker hier hat die PWA keinen Vorrat und
+    zeigt im Flugmodus nur die Fehlerseite des Browsers.
+
+    Erst nach dem Laden anmelden: der Vorrat (rund 20 MB) entsteht dann im
+    Hintergrund und bremst den Start nicht aus.
+  -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        var adresse = new URL('sw.js', document.baseURI).toString();
+        navigator.serviceWorker.register(adresse).catch(function (fehler) {
+          // Kein Worker heisst nur: kein Offline-Betrieb. Die App selbst
+          // laeuft weiter, also hier nichts anmerken lassen.
+          console.warn('Zeitexa: Service Worker nicht angemeldet.', fehler);
+        });
+      });
+    }
+  </script>
+
 
 </body></html>
