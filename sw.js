@@ -13,7 +13,7 @@
 'use strict';
 
 // >>> BUILD-ANFANG <<<
-const CACHE_NAME = 'zeitexa-1.24.2-d068d3a2';
+const CACHE_NAME = 'zeitexa-1.25.0-89070de7';
 const PRECACHE = [
   './',
   'assets/AssetManifest.bin',
@@ -23,6 +23,10 @@ const PRECACHE = [
   'assets/assets/branding/zeitexa-mono-white.svg',
   'assets/assets/branding/zeitexa-primary.svg',
   'assets/assets/branding/zeitexa-reversed.svg',
+  'assets/assets/fonts/Inter-Bold.ttf',
+  'assets/assets/fonts/Inter-Medium.ttf',
+  'assets/assets/fonts/Inter-Regular.ttf',
+  'assets/assets/fonts/Inter-SemiBold.ttf',
   'assets/assets/fonts/Roboto-Bold.ttf',
   'assets/assets/fonts/Roboto-Regular.ttf',
   'assets/assets/zeitexa_logo.png',
