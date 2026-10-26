@@ -13,7 +13,7 @@
 'use strict';
 
 // >>> BUILD-ANFANG <<<
-const CACHE_NAME = 'zeitexa-1.26.1-a7b222c6';
+const CACHE_NAME = 'zeitexa-1.27.0-93039eb6';
 const PRECACHE = [
   './',
   'assets/AssetManifest.bin',
@@ -28,6 +28,8 @@ const PRECACHE = [
   'assets/assets/fonts/Inter-Regular.ttf',
   'assets/assets/fonts/Inter-SemiBold.ttf',
   'assets/assets/fonts/Roboto-Bold.ttf',
+  'assets/assets/fonts/Roboto-BoldItalic.ttf',
+  'assets/assets/fonts/Roboto-Italic.ttf',
   'assets/assets/fonts/Roboto-Regular.ttf',
   'assets/assets/zeitexa_logo.png',
   'assets/FontManifest.json',
