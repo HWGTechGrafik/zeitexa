@@ -13,7 +13,7 @@
 'use strict';
 
 // >>> BUILD-ANFANG <<<
-const CACHE_NAME = 'zeitexa-1.29.6-efadb1ec';
+const CACHE_NAME = 'zeitexa-1.29.7-1dae8598';
 const PRECACHE = [
   './',
   'assets/AssetManifest.bin',
